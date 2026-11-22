@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
-import { heartbeatPresence, getOnlineState, isRedisEnabled } from '@/lib/db';
+import { heartbeatPresence, getOnlineState, getStorageInfo } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const state = await getOnlineState();
-    return NextResponse.json({ ...state, storage: isRedisEnabled() ? 'redis' : 'local' });
+    return NextResponse.json({ ...state, ...getStorageInfo() });
   } catch (err) {
     console.error('[api/presence GET]', err);
-    return NextResponse.json({ onlineUsers: [], roomPresence: {} });
+    return NextResponse.json({ onlineUsers: [], roomPresence: {}, ...getStorageInfo() });
   }
 }
 
@@ -23,9 +23,9 @@ export async function POST(request) {
       avatar: body.avatar,
       activeRoomId: body.activeRoomId || null,
     });
-    return NextResponse.json({ ...state, storage: isRedisEnabled() ? 'redis' : 'local' });
+    return NextResponse.json({ ...state, ...getStorageInfo() });
   } catch (err) {
     console.error('[api/presence POST]', err);
-    return NextResponse.json({ onlineUsers: [], roomPresence: {} }, { status: 500 });
+    return NextResponse.json({ onlineUsers: [], roomPresence: {}, ...getStorageInfo() }, { status: 500 });
   }
 }

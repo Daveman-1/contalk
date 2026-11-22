@@ -18,7 +18,9 @@ export async function GET(request) {
       return NextResponse.json({ session: { status: 'idle' }, messages: [], isPartnerTyping: false, queueCounts: { male: 0, female: 0 } });
     }
     const data = await getRandomStatus(userId);
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+    });
   } catch (err) {
     console.error('[api/random GET]', err);
     return NextResponse.json({ error: 'Failed to read random chat status' }, { status: 500 });

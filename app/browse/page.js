@@ -96,7 +96,16 @@ export default function BrowsePage() {
       );
       if (!res.ok) return;
       const data = await res.json();
-      if (Array.isArray(data.messages)) setMessages(data.messages);
+      if (Array.isArray(data.messages)) {
+        setMessages((prev) => {
+          const pendingLocals = prev.filter(
+            (m) =>
+              String(m.id || '').startsWith('local_') &&
+              Date.now() - new Date(m.timestamp).getTime() < 8000
+          );
+          return [...data.messages, ...pendingLocals];
+        });
+      }
       setIsPartnerTyping(Array.isArray(data.typingUsers) && data.typingUsers.length > 0);
     } catch {
     } finally {

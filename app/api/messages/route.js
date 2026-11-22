@@ -16,7 +16,10 @@ export async function GET(request) {
       getMessagesByRoom(roomId, 150),
       getTypingUsers(roomId, myId),
     ]);
-    return NextResponse.json({ messages, typingUsers });
+    return NextResponse.json(
+      { messages, typingUsers },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (err) {
     console.error('[api/messages GET]', err);
     return NextResponse.json({ error: 'Failed to load messages' }, { status: 500 });

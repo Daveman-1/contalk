@@ -83,7 +83,16 @@ export default function RandomChatPage() {
       setStrangerIsAnon(session.strangerIsAnon !== false);
       setStrangerAvatar(session.strangerAvatar || null);
       setStrangerGender(session.strangerGender === 'female' ? 'female' : 'male');
-      if (Array.isArray(data.messages)) setMessages(data.messages);
+      if (Array.isArray(data.messages)) {
+        setMessages((prev) => {
+          const pendingLocals = prev.filter(
+            (m) =>
+              String(m.id || '').startsWith('local_') &&
+              Date.now() - new Date(m.timestamp).getTime() < 8000
+          );
+          return [...data.messages, ...pendingLocals];
+        });
+      }
       setIsStrangerTyping(Boolean(data.isPartnerTyping));
       setChatState(STATES.CHATTING);
     } else if (session.status === 'waiting') {

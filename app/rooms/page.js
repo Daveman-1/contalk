@@ -65,7 +65,16 @@ export default function RoomsPage() {
       );
       if (!res.ok) return;
       const data = await res.json();
-      if (Array.isArray(data.messages)) setMessages(data.messages);
+      if (Array.isArray(data.messages)) {
+        setMessages((prev) => {
+          const pendingLocals = prev.filter(
+            (m) =>
+              String(m.id || '').startsWith('local_') &&
+              Date.now() - new Date(m.timestamp).getTime() < 8000
+          );
+          return [...data.messages, ...pendingLocals];
+        });
+      }
       setTypingUsers(Array.isArray(data.typingUsers) ? data.typingUsers : []);
     } catch {
     } finally {
