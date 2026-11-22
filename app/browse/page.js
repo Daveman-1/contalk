@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { io } from 'socket.io-client';
 import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserList from '@/components/UserList';
@@ -10,36 +9,28 @@ import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity, getDmRoomId } from '@/lib/identity';
 
 export default function BrowsePage() {
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const { onlineUsers, unreadBySenderId, clearSenderUnread, setActiveDmPartnerId } = useNotifications();
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [activeUserId, setActiveUserId] = useState(null);
-  const [chatsByUserId, setChatsByUserId] = useState({});
-  const [unreadCounts, setUnreadCounts] = useState({});
-  const [typingByUserId, setTypingByUserId] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [myId, setMyId] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  const { setActiveDmPartnerId } = useNotifications();
-  const socketRef = useRef(null);
-  const activeUserIdRef = useRef(null);
-  const myIdRef = useRef('');
-
   useEffect(() => {
-    activeUserIdRef.current = activeUserId;
     setActiveDmPartnerId(activeUserId);
+    if (activeUserId) clearSenderUnread(activeUserId);
     return () => setActiveDmPartnerId(null);
-  }, [activeUserId, setActiveDmPartnerId]);
+  }, [activeUserId, setActiveDmPartnerId, clearSenderUnread]);
 
   const fetchRegisteredUsers = useCallback(async () => {
     try {
       const res = await fetch('/api/users', { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
-      if (Array.isArray(data.users)) {
-        setRegisteredUsers(data.users);
-      }
+      if (Array.isArray(data.users)) setRegisteredUsers(data.users);
     } catch (err) {
       console.error('Failed to load accounts:', err);
     }
@@ -49,75 +40,18 @@ export default function BrowsePage() {
     const syncIdentity = () => {
       const identity = getIdentity();
       setMyId(identity.id);
-      myIdRef.current = identity.id;
-      if (socketRef.current?.connected) {
-        socketRef.current.emit('register', identity);
-      }
     };
-
     syncIdentity();
     fetchRegisteredUsers();
 
-    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      const identity = getIdentity();
-      myIdRef.current = identity.id;
-      socket.emit('register', identity);
-    });
-
-    socket.on('online_users', (users) => {
-      if (Array.isArray(users)) setOnlineUsers(users);
-    });
-
-    socket.on('accounts_updated', () => {
-      fetchRegisteredUsers();
-    });
-
-    socket.on('dm_message', (msg) => {
-      const currentMyId = myIdRef.current;
-      const partnerId = msg.senderId === currentMyId ? msg.recipientId : msg.senderId;
-      if (!partnerId) return;
-
-      setChatsByUserId((prev) => {
-        const existing = prev[partnerId] || [];
-        if (msg.id && existing.some((m) => m.id === msg.id)) return prev;
-        return {
-          ...prev,
-          [partnerId]: [
-            ...existing,
-            {
-              id: msg.id,
-              content: msg.content,
-              sender: msg.sender,
-              senderId: msg.senderId,
-              senderAvatar: msg.senderAvatar || null,
-              timestamp: msg.timestamp || new Date().toISOString(),
-            },
-          ],
-        };
-      });
-
-      setTypingByUserId((prev) => ({ ...prev, [partnerId]: false }));
-
-      if (msg.senderId !== currentMyId && activeUserIdRef.current !== partnerId) {
-        setUnreadCounts((prev) => ({
-          ...prev,
-          [partnerId]: (prev[partnerId] || 0) + 1,
-        }));
-      }
-    });
-
-    socket.on('dm_typing', ({ senderId, isTyping }) => {
-      if (!senderId) return;
-      setTypingByUserId((prev) => ({ ...prev, [senderId]: Boolean(isTyping) }));
-    });
+    const usersTimer = setInterval(() => {
+      if (!document.hidden) fetchRegisteredUsers();
+    }, 10000);
 
     window.addEventListener('auth_change', syncIdentity);
     return () => {
+      clearInterval(usersTimer);
       window.removeEventListener('auth_change', syncIdentity);
-      socket.disconnect();
     };
   }, [fetchRegisteredUsers]);
 
@@ -140,7 +74,6 @@ export default function BrowsePage() {
         avatar: u.avatar || prev?.avatar || null,
         isAnon: Boolean(u.isAnon),
         online: true,
-        socketId: u.socketId,
       });
     }
     return Array.from(byId.values());
@@ -151,36 +84,47 @@ export default function BrowsePage() {
     [mergedUsers, activeUserId]
   );
 
-  const handleChatWith = useCallback(async (user) => {
-    setActiveUserId(user.id);
-    setUnreadCounts((prev) => ({ ...prev, [user.id]: 0 }));
-
+  const pollMessages = useCallback(async (partnerId, initial = false) => {
     const identity = getIdentity();
-    const roomId = getDmRoomId(identity.id, user.id);
-    socketRef.current?.emit('join_dm', { roomId });
-
-    setLoadingHistory(true);
+    if (!partnerId || !identity.id) return;
+    const roomId = getDmRoomId(identity.id, partnerId);
+    if (initial) setLoadingHistory(true);
     try {
-      const res = await fetch(`/api/messages?roomId=${encodeURIComponent(roomId)}`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.messages)) {
-          setChatsByUserId((prev) => {
-            const existing = prev[user.id] || [];
-            const seen = new Set(data.messages.map((m) => m.id));
-            const extras = existing.filter((m) => !m.id || !seen.has(m.id));
-            return { ...prev, [user.id]: [...data.messages, ...extras] };
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load chat history:', err);
+      const res = await fetch(
+        `/api/messages?roomId=${encodeURIComponent(roomId)}&myId=${encodeURIComponent(identity.id)}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.messages)) setMessages(data.messages);
+      setIsPartnerTyping(Array.isArray(data.typingUsers) && data.typingUsers.length > 0);
+    } catch {
     } finally {
-      setLoadingHistory(false);
+      if (initial) setLoadingHistory(false);
     }
   }, []);
 
-  // Auto-open DM when navigated from /feed?chatWith=<userId>
+  useEffect(() => {
+    if (!activeUserId) {
+      setMessages([]);
+      setIsPartnerTyping(false);
+      return;
+    }
+
+    pollMessages(activeUserId, true);
+    const timer = setInterval(() => {
+      if (!document.hidden) pollMessages(activeUserId, false);
+    }, 1500);
+
+    return () => clearInterval(timer);
+  }, [activeUserId, pollMessages]);
+
+  const handleChatWith = useCallback((user) => {
+    setActiveUserId(user.id);
+    clearSenderUnread(user.id);
+  }, [clearSenderUnread]);
+
+  // Auto-open DM when navigated from /feed?chatWith=<userId> or Notification toast
   const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (autoOpenedRef.current || typeof window === 'undefined' || mergedUsers.length === 0) return;
@@ -194,48 +138,65 @@ export default function BrowsePage() {
     }
   }, [mergedUsers, myId, handleChatWith]);
 
-  const handleSend = (content) => {
-    if (!activeUser || !socketRef.current) return;
+  const handleSend = async (content) => {
+    if (!activeUser) return;
     const identity = getIdentity();
     const roomId = getDmRoomId(identity.id, activeUser.id);
-    const localId = `local_${Date.now()}_${Math.random()}`;
+    const optimisticId = `local_${Date.now()}_${Math.random()}`;
 
-    socketRef.current.emit('dm_message', {
-      roomId,
-      recipientId: activeUser.id,
-      content,
-      sender: identity.name,
-      senderId: identity.id,
-      senderAvatar: identity.avatar,
-    });
-
-    setChatsByUserId((prev) => ({
+    setMessages((prev) => [
       ...prev,
-      [activeUser.id]: [
-        ...(prev[activeUser.id] || []),
-        {
-          id: localId,
+      {
+        id: optimisticId,
+        content,
+        sender: identity.name,
+        senderId: identity.id,
+        senderAvatar: identity.avatar,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          recipientId: activeUser.id,
           content,
           sender: identity.name,
           senderId: identity.id,
           senderAvatar: identity.avatar,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    }));
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.message) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === optimisticId ? data.message : m))
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send DM:', err);
+    }
   };
 
   const handleTyping = (isTyping) => {
-    if (!activeUser || !socketRef.current) return;
+    if (!activeUser) return;
     const identity = getIdentity();
-    socketRef.current.emit('dm_typing', {
-      recipientId: activeUser.id,
-      senderId: identity.id,
-      isTyping,
-    });
+    const roomId = getDmRoomId(identity.id, activeUser.id);
+    fetch('/api/typing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roomId,
+        userId: identity.id,
+        userName: identity.name,
+        isTyping,
+      }),
+    }).catch(() => {});
   };
-
-  const activeMessages = activeUser ? chatsByUserId[activeUser.id] || [] : [];
 
   return (
     <WorkspaceShell
@@ -246,7 +207,6 @@ export default function BrowsePage() {
       searchPlaceholder="Search people..."
       showMobileBottomNav={!activeUser}
     >
-      {/* Image 2 Columns 2 + 3 */}
       <div className="h-full flex overflow-hidden">
         {/* Column 2: Middle Directory & DMs */}
         <div
@@ -258,22 +218,21 @@ export default function BrowsePage() {
             onChat={handleChatWith}
             activeUserId={activeUser?.id}
             myId={myId}
-            unreadCounts={unreadCounts}
+            unreadCounts={unreadBySenderId}
             filter={filter}
             onFilterChange={setFilter}
             search={search}
           />
         </div>
 
-        {/* Column 3: Main Chat Window (Image 2 right canvas) */}
+        {/* Column 3: Main Chat Window */}
         <div
-          className={`${activeUser ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-4 sm:p-6`}
+          className={`${activeUser ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-3 sm:p-6`}
           style={{ background: 'var(--bg-app)' }}
         >
           {activeUser ? (
             <>
-              {/* Chat Title Row (Image 2 "Chat with Noah Martinez") */}
-              <div className="flex items-center justify-between gap-3 mb-4 flex-shrink-0">
+              <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={() => setActiveUserId(null)}
@@ -292,12 +251,12 @@ export default function BrowsePage() {
                     online={activeUser.online}
                   />
                   <div className="min-w-0">
-                    <h1 className="text-lg sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                    <h1 className="text-base sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                       Chat with {activeUser.name}
                     </h1>
                     <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       <span className={activeUser.online ? 'online-dot' : 'offline-dot'} />
-                      <span>
+                      <span className="truncate">
                         {activeUser.isAnon ? 'Anonymous user' : 'Registered account'} ·{' '}
                         {activeUser.online ? 'Online now' : 'Offline (messages saved)'}
                       </span>
@@ -306,21 +265,20 @@ export default function BrowsePage() {
                 </div>
               </div>
 
-              {/* Rounded Bordered Chat Container (Image 2 style) */}
               <div
                 className="flex-1 min-h-0 rounded-2xl border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
               >
-                {loadingHistory && activeMessages.length === 0 ? (
+                {loadingHistory && messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="spinner"></div>
                   </div>
                 ) : (
                   <ChatBox
-                    messages={activeMessages}
+                    messages={messages}
                     onSend={handleSend}
                     onTyping={handleTyping}
-                    isPartnerTyping={Boolean(typingByUserId[activeUser.id])}
+                    isPartnerTyping={isPartnerTyping}
                     partnerName={activeUser.name}
                     partnerAvatar={activeUser.avatar}
                     myId={myId}

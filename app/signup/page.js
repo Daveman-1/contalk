@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { io } from 'socket.io-client';
 import ConTalkLogo from '@/components/ConTalkLogo';
 
 export default function SignupPage() {
@@ -43,13 +42,6 @@ export default function SignupPage() {
         localStorage.setItem('ct_token', data.token);
         localStorage.setItem('ct_user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth_change'));
-        try {
-          const s = io(window.location.origin, { transports: ['websocket', 'polling'] });
-          s.on('connect', () => {
-            s.emit('account_created');
-            setTimeout(() => s.disconnect(), 300);
-          });
-        } catch {}
         router.push('/browse');
       }
     } catch {

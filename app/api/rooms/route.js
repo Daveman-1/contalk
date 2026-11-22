@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const rooms = getAllRooms();
+    const rooms = await getAllRooms();
     return NextResponse.json({ rooms });
   } catch (err) {
     console.error('[api/rooms GET]', err);
@@ -33,11 +33,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Room name must contain letters or numbers' }, { status: 400 });
     }
 
-    if (findRoomBySlug(slug)) {
+    if (await findRoomBySlug(slug)) {
       return NextResponse.json({ error: 'A room with a similar name already exists' }, { status: 409 });
     }
 
-    const room = createRoom({
+    const room = await createRoom({
       id: `room_${uuidv4().slice(0, 8)}`,
       name: trimmedName,
       slug,

@@ -13,7 +13,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Author ID is required' }, { status: 400 });
     }
 
-    const result = deletePost(id, authorId);
+    const result = await deletePost(id, authorId);
     if (result.status === 'not_found') {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }

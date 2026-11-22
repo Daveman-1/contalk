@@ -20,7 +20,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Author identity is required' }, { status: 400 });
     }
 
-    const result = addPostReply(id, {
+    const result = await addPostReply(id, {
       id: uuidv4(),
       author_id: String(authorId),
       author_name: String(authorName).slice(0, 32),

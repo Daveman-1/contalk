@@ -2,29 +2,30 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { io } from 'socket.io-client';
 import FeedTimeline from '@/components/FeedTimeline';
 import NotificationBell from '@/components/NotificationBell';
 import ConTalkLogo from '@/components/ConTalkLogo';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import UserAvatar from '@/components/UserAvatar';
 import AvatarPickerModal from '@/components/AvatarPickerModal';
+import { useNotifications } from '@/components/NotificationProvider';
 import { SunIcon, MoonIcon } from '@/components/ThemeIcon';
 import { useTheme } from '@/components/ThemeProvider';
 import { getIdentity } from '@/lib/identity';
 
 export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
+  const { onlineUsers, refreshPresence } = useNotifications();
   const [identity, setIdentity] = useState({ id: '', name: 'Anon', isAnon: true, avatar: 'cloud' });
   const [anonFallback, setAnonFallback] = useState({ id: '', name: 'Anon' });
-  const [onlineCount, setOnlineCount] = useState(0);
   const [postText, setPostText] = useState('');
   const [postAnonymously, setPostAnonymously] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusBanner, setStatusBanner] = useState('');
-  const socketRef = useRef(null);
   const feedSectionRef = useRef(null);
+
+  const onlineCount = onlineUsers.length;
 
   useEffect(() => {
     const sync = () => {
@@ -36,22 +37,8 @@ export default function HomePage() {
       });
     };
     sync();
-
-    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      socket.emit('register', getIdentity());
-    });
-    socket.on('online_users', (users) => {
-      setOnlineCount(Array.isArray(users) ? users.length : 0);
-    });
-
     window.addEventListener('auth_change', sync);
-    return () => {
-      window.removeEventListener('auth_change', sync);
-      socket.disconnect();
-    };
+    return () => window.removeEventListener('auth_change', sync);
   }, []);
 
   const effectiveAuthor =
@@ -83,7 +70,7 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json();
         setPostText('');
-        socketRef.current?.emit('post_created', data.post);
+        window.dispatchEvent(new CustomEvent('posts_changed', { detail: data.post }));
         setStatusBanner('Published to the Live Feed below!');
         setTimeout(() => setStatusBanner(''), 3000);
       } else {
@@ -499,9 +486,8 @@ export default function HomePage() {
           currentAvatar={identity.avatar}
           onClose={() => setAvatarModalOpen(false)}
           onSaved={() => {
-            const updated = getIdentity();
-            setIdentity(updated);
-            socketRef.current?.emit('register', updated);
+            setIdentity(getIdentity());
+            refreshPresence();
           }}
         />
       )}

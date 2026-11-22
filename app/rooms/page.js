@@ -1,20 +1,20 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { io } from 'socket.io-client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
+import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
 
 const ROOM_ICONS = ['💬', '💻', '🎮', '🎧', '🕵️', '🔥', '🚀', '🎨', '📚', '🌍', '🎬', '⚡'];
 
 export default function RoomsPage() {
+  const { roomPresence, setActiveRoomId: reportActiveRoom } = useNotifications();
   const [rooms, setRooms] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState(null);
-  const [messagesByRoom, setMessagesByRoom] = useState({});
-  const [roomPresence, setRoomPresence] = useState({});
-  const [typingUsersByRoom, setTypingUsersByRoom] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -24,14 +24,6 @@ export default function RoomsPage() {
   const [newRoom, setNewRoom] = useState({ name: '', description: '', icon: '💬' });
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
-
-  const socketRef = useRef(null);
-  const activeRoomIdRef = useRef(null);
-  const myIdRef = useRef('');
-
-  useEffect(() => {
-    activeRoomIdRef.current = activeRoomId;
-  }, [activeRoomId]);
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -45,111 +37,64 @@ export default function RoomsPage() {
   }, []);
 
   useEffect(() => {
-    const syncIdentity = () => {
-      const identity = getIdentity();
-      setMyId(identity.id);
-      myIdRef.current = identity.id;
-      if (socketRef.current?.connected) {
-        socketRef.current.emit('register', identity);
-      }
-    };
-
+    const syncIdentity = () => setMyId(getIdentity().id);
     syncIdentity();
     fetchRooms();
 
-    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      const identity = getIdentity();
-      myIdRef.current = identity.id;
-      socket.emit('register', identity);
-      if (activeRoomIdRef.current) {
-        socket.emit('join_room', { roomId: activeRoomIdRef.current });
-      }
-    });
-
-    socket.on('room_presence', (summary) => {
-      if (summary && typeof summary === 'object') setRoomPresence(summary);
-    });
-
-    socket.on('rooms_updated', () => {
-      fetchRooms();
-    });
-
-    socket.on('room_message', (msg) => {
-      if (!msg || !msg.roomId) return;
-      setMessagesByRoom((prev) => {
-        const existing = prev[msg.roomId] || [];
-        if (msg.id && existing.some((m) => m.id === msg.id)) return prev;
-        return {
-          ...prev,
-          [msg.roomId]: [
-            ...existing,
-            {
-              id: msg.id,
-              content: msg.content,
-              sender: msg.sender,
-              senderId: msg.senderId,
-              senderAvatar: msg.senderAvatar || null,
-              timestamp: msg.timestamp || new Date().toISOString(),
-            },
-          ],
-        };
-      });
-
-      setTypingUsersByRoom((prev) => {
-        const current = { ...(prev[msg.roomId] || {}) };
-        delete current[msg.senderId];
-        return { ...prev, [msg.roomId]: current };
-      });
-    });
-
-    socket.on('room_typing', ({ roomId, senderId, senderName, isTyping }) => {
-      if (!roomId || !senderId || senderId === myIdRef.current) return;
-      setTypingUsersByRoom((prev) => {
-        const current = { ...(prev[roomId] || {}) };
-        if (isTyping) current[senderId] = senderName;
-        else delete current[senderId];
-        return { ...prev, [roomId]: current };
-      });
-    });
+    const roomsTimer = setInterval(() => {
+      if (!document.hidden) fetchRooms();
+    }, 12000);
 
     window.addEventListener('auth_change', syncIdentity);
     return () => {
+      clearInterval(roomsTimer);
       window.removeEventListener('auth_change', syncIdentity);
-      socket.disconnect();
+      reportActiveRoom(null);
     };
-  }, [fetchRooms]);
+  }, [fetchRooms, reportActiveRoom]);
 
-  const handleSelectRoom = useCallback(async (room) => {
-    setActiveRoomId(room.id);
-    setShowMembers(false);
-    socketRef.current?.emit('join_room', { roomId: room.id });
-
-    setLoadingHistory(true);
+  const pollRoomMessages = useCallback(async (roomId, initial = false) => {
+    const identity = getIdentity();
+    if (!roomId) return;
+    const dbRoomId = `chatroom:${roomId}`;
+    if (initial) setLoadingHistory(true);
     try {
-      const dbRoomId = `chatroom:${room.id}`;
-      const res = await fetch(`/api/messages?roomId=${encodeURIComponent(dbRoomId)}`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.messages)) {
-          setMessagesByRoom((prev) => {
-            const existing = prev[room.id] || [];
-            const seen = new Set(data.messages.map((m) => m.id));
-            const extras = existing.filter((m) => !m.id || !seen.has(m.id));
-            return { ...prev, [room.id]: [...data.messages, ...extras] };
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load room history:', err);
+      const res = await fetch(
+        `/api/messages?roomId=${encodeURIComponent(dbRoomId)}&myId=${encodeURIComponent(identity.id)}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.messages)) setMessages(data.messages);
+      setTypingUsers(Array.isArray(data.typingUsers) ? data.typingUsers : []);
+    } catch {
     } finally {
-      setLoadingHistory(false);
+      if (initial) setLoadingHistory(false);
     }
   }, []);
 
-  // Auto-select from ?room=... query param or default first room on desktop
+  useEffect(() => {
+    reportActiveRoom(activeRoomId);
+    if (!activeRoomId) {
+      setMessages([]);
+      setTypingUsers([]);
+      return;
+    }
+
+    pollRoomMessages(activeRoomId, true);
+    const timer = setInterval(() => {
+      if (!document.hidden) pollRoomMessages(activeRoomId, false);
+    }, 1500);
+
+    return () => clearInterval(timer);
+  }, [activeRoomId, pollRoomMessages, reportActiveRoom]);
+
+  const handleSelectRoom = useCallback((room) => {
+    setActiveRoomId(room.id);
+    setShowMembers(false);
+  }, []);
+
+  // Auto-select from ?room=... or default first room on desktop
   useEffect(() => {
     if (rooms.length === 0 || typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -166,27 +111,60 @@ export default function RoomsPage() {
     }
   }, [rooms, activeRoomId, handleSelectRoom]);
 
-  const handleSend = (content) => {
-    if (!activeRoomId || !socketRef.current) return;
+  const handleSend = async (content) => {
+    if (!activeRoomId) return;
     const identity = getIdentity();
-    socketRef.current.emit('room_message', {
-      roomId: activeRoomId,
-      content,
-      sender: identity.name,
-      senderId: identity.id,
-      senderAvatar: identity.avatar,
-    });
+    const dbRoomId = `chatroom:${activeRoomId}`;
+    const optimisticId = `local_${Date.now()}_${Math.random()}`;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: optimisticId,
+        content,
+        sender: identity.name,
+        senderId: identity.id,
+        senderAvatar: identity.avatar,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: dbRoomId,
+          content,
+          sender: identity.name,
+          senderId: identity.id,
+          senderAvatar: identity.avatar,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.message) {
+          setMessages((prev) => prev.map((m) => (m.id === optimisticId ? data.message : m)));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send room message:', err);
+    }
   };
 
   const handleTyping = (isTyping) => {
-    if (!activeRoomId || !socketRef.current) return;
+    if (!activeRoomId) return;
     const identity = getIdentity();
-    socketRef.current.emit('room_typing', {
-      roomId: activeRoomId,
-      senderId: identity.id,
-      senderName: identity.name,
-      isTyping,
-    });
+    fetch('/api/typing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roomId: `chatroom:${activeRoomId}`,
+        userId: identity.id,
+        userName: identity.name,
+        isTyping,
+      }),
+    }).catch(() => {});
   };
 
   const handleCreateRoom = async (e) => {
@@ -213,7 +191,6 @@ export default function RoomsPage() {
         setShowCreateModal(false);
         setNewRoom({ name: '', description: '', icon: '💬' });
         await fetchRooms();
-        socketRef.current?.emit('room_created', data.room);
         handleSelectRoom(data.room);
       }
     } catch {
@@ -240,18 +217,11 @@ export default function RoomsPage() {
   );
 
   const activeMembers = activeRoom ? roomPresence[activeRoom.id] || [] : [];
-  const activeMessages = activeRoom ? messagesByRoom[activeRoom.id] || [] : [];
-
-  const typingNames = useMemo(() => {
-    if (!activeRoom) return [];
-    return Object.values(typingUsersByRoom[activeRoom.id] || {});
-  }, [activeRoom, typingUsersByRoom]);
-
   const typingLabel =
-    typingNames.length === 1
-      ? typingNames[0]
-      : typingNames.length > 1
-        ? `${typingNames.length} people`
+    typingUsers.length === 1
+      ? typingUsers[0].userName
+      : typingUsers.length > 1
+        ? `${typingUsers.length} people`
         : '';
 
   return (
@@ -264,7 +234,7 @@ export default function RoomsPage() {
       showMobileBottomNav={!activeRoom}
     >
       <div className="h-full flex overflow-hidden">
-        {/* Column 2: Rooms List (Image 2 Middle Panel) */}
+        {/* Column 2: Rooms List */}
         <div
           className={`${activeRoom ? 'hidden md:flex' : 'flex'} w-full md:w-[270px] flex-shrink-0 flex-col border-r h-full px-4 py-4`}
           style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-panel)' }}
@@ -341,21 +311,17 @@ export default function RoomsPage() {
           </div>
         </div>
 
-        {/* Column 3: Active Room Chat (Image 2 Right Canvas) */}
+        {/* Column 3: Active Room Chat */}
         <div
-          className={`${activeRoom ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-4 sm:p-6`}
+          className={`${activeRoom ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-3 sm:p-6`}
           style={{ background: 'var(--bg-app)' }}
         >
           {activeRoom ? (
             <>
-              {/* Header */}
-              <div className="flex items-center justify-between gap-3 mb-4 flex-shrink-0">
+              <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
-                    onClick={() => {
-                      socketRef.current?.emit('leave_room', { roomId: activeRoom.id });
-                      setActiveRoomId(null);
-                    }}
+                    onClick={() => setActiveRoomId(null)}
                     className="md:hidden btn-soft p-2"
                     aria-label="Back to rooms"
                   >
@@ -366,7 +332,7 @@ export default function RoomsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{activeRoom.icon || '💬'}</span>
-                      <h1 className="text-lg sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                      <h1 className="text-base sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                         {activeRoom.name}
                       </h1>
                       <span className="text-xs font-mono" style={{ color: 'var(--accent-purple)' }}>
@@ -388,7 +354,6 @@ export default function RoomsPage() {
                 </button>
               </div>
 
-              {/* Members Popover Strip */}
               {showMembers && (
                 <div
                   className="mb-3 px-4 py-2.5 rounded-xl border flex flex-wrap items-center gap-2 animate-fadeIn flex-shrink-0"
@@ -412,21 +377,20 @@ export default function RoomsPage() {
                 </div>
               )}
 
-              {/* Rounded Bordered Chat Container */}
               <div
                 className="flex-1 min-h-0 rounded-2xl border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
               >
-                {loadingHistory && activeMessages.length === 0 ? (
+                {loadingHistory && messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="spinner"></div>
                   </div>
                 ) : (
                   <ChatBox
-                    messages={activeMessages}
+                    messages={messages}
                     onSend={handleSend}
                     onTyping={handleTyping}
-                    isPartnerTyping={typingNames.length > 0}
+                    isPartnerTyping={typingUsers.length > 0}
                     partnerName={typingLabel}
                     myId={myId}
                     placeholder={`Message #${activeRoom.slug}`}

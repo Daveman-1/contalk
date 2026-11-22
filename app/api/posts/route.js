@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const posts = getAllPosts();
+    const posts = await getAllPosts();
     return NextResponse.json({ posts });
   } catch (err) {
     console.error('[api/posts GET]', err);
@@ -29,7 +29,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Author identity is required' }, { status: 400 });
     }
 
-    const post = createPost({
+    const post = await createPost({
       id: uuidv4(),
       author_id: String(authorId),
       author_name: String(authorName).slice(0, 32),

@@ -4,6 +4,8 @@ import { signToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
@@ -30,7 +32,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username cannot start with "Anon-"' }, { status: 400 });
     }
 
-    const existing = findUserByUsername(sanitized);
+    const existing = await findUserByUsername(sanitized);
     if (existing) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
     }
@@ -38,10 +40,10 @@ export async function POST(request) {
     const password_hash = await bcrypt.hash(password, 10);
     const id = uuidv4();
 
-    const user = createUser({ id, username: sanitized, password_hash });
+    const user = await createUser({ id, username: sanitized, password_hash });
     const token = signToken({ id: user.id, username: user.username });
 
-    return NextResponse.json({ token, user: { id: user.id, username: user.username } }, { status: 201 });
+    return NextResponse.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar || null } }, { status: 201 });
   } catch (err) {
     console.error('[signup]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

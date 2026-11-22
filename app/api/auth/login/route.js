@@ -3,6 +3,8 @@ import { findUserByUsername } from '@/lib/db';
 import { signToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
@@ -11,7 +13,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
-    const user = findUserByUsername(username);
+    const user = await findUserByUsername(username);
     if (!user) {
       return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }

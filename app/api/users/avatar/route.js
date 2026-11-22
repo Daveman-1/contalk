@@ -10,7 +10,7 @@ export async function POST(request) {
     if (!userId || !isValidAvatarId(avatar)) {
       return NextResponse.json({ error: 'Valid userId and avatar are required' }, { status: 400 });
     }
-    const updated = updateUserAvatar(String(userId), avatar);
+    const updated = await updateUserAvatar(String(userId), avatar);
     if (!updated) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

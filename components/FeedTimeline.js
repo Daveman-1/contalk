@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { io } from 'socket.io-client';
 import UserAvatar from '@/components/UserAvatar';
 import { getIdentity } from '@/lib/identity';
 
@@ -61,9 +60,8 @@ export default function FeedTimeline({
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replySubmitting, setReplySubmitting] = useState({});
 
-  const [identity, setIdentity] = useState({ id: '', name: 'Anon', isAnon: true });
+  const [identity, setIdentity] = useState({ id: '', name: 'Anon', isAnon: true, avatar: 'cloud' });
   const [anonFallback, setAnonFallback] = useState({ id: '', name: 'Anon' });
-  const socketRef = useRef(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -87,40 +85,30 @@ export default function FeedTimeline({
       const storedAnonId = localStorage.getItem('ct_anon_id') || idObj.id;
       const storedAnonName = localStorage.getItem('ct_anon_name') || 'Anon';
       setAnonFallback({ id: storedAnonId, name: storedAnonName });
-      if (socketRef.current?.connected) {
-        socketRef.current.emit('register', idObj);
-      }
     };
 
     syncIdentity();
     fetchPosts();
 
-    const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-    socketRef.current = socket;
+    const poll = setInterval(() => {
+      if (!document.hidden) fetchPosts();
+    }, 5000);
 
-    socket.on('connect', () => {
-      socket.emit('register', getIdentity());
-    });
-
-    socket.on('post_created', (newPost) => {
-      if (!newPost || !newPost.id) return;
-      setPosts((prev) => (prev.some((p) => p.id === newPost.id) ? prev : [newPost, ...prev]));
-    });
-
-    socket.on('post_updated', (updatedPost) => {
-      if (!updatedPost || !updatedPost.id) return;
-      setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
-    });
-
-    socket.on('post_deleted', ({ id }) => {
-      if (!id) return;
-      setPosts((prev) => prev.filter((p) => p.id !== id));
-    });
+    const onPostCreated = (e) => {
+      const newPost = e?.detail;
+      if (newPost && newPost.id) {
+        setPosts((prev) => (prev.some((p) => p.id === newPost.id) ? prev : [newPost, ...prev]));
+      } else {
+        fetchPosts();
+      }
+    };
 
     window.addEventListener('auth_change', syncIdentity);
+    window.addEventListener('posts_changed', onPostCreated);
     return () => {
+      clearInterval(poll);
       window.removeEventListener('auth_change', syncIdentity);
-      socket.disconnect();
+      window.removeEventListener('posts_changed', onPostCreated);
     };
   }, [fetchPosts]);
 
@@ -167,7 +155,6 @@ export default function FeedTimeline({
       } else {
         setContent('');
         setPosts((prev) => (prev.some((p) => p.id === data.post.id) ? prev : [data.post, ...prev]));
-        socketRef.current?.emit('post_created', data.post);
       }
     } catch {
       setError('Network error. Please try again.');
@@ -188,7 +175,6 @@ export default function FeedTimeline({
       const data = await res.json();
       if (data.post) {
         setPosts((prev) => prev.map((p) => (p.id === data.post.id ? data.post : p)));
-        socketRef.current?.emit('post_updated', data.post);
       }
     } catch (err) {
       console.error('Like failed:', err);
@@ -218,7 +204,6 @@ export default function FeedTimeline({
       if (data.post) {
         setReplyDrafts((prev) => ({ ...prev, [postId]: '' }));
         setPosts((prev) => prev.map((p) => (p.id === data.post.id ? data.post : p)));
-        socketRef.current?.emit('post_updated', data.post);
       }
     } catch (err) {
       console.error('Reply failed:', err);
@@ -237,7 +222,6 @@ export default function FeedTimeline({
       );
       if (!res.ok) return;
       setPosts((prev) => prev.filter((p) => p.id !== post.id));
-      socketRef.current?.emit('post_deleted', { id: post.id });
     } catch (err) {
       console.error('Delete failed:', err);
     }
