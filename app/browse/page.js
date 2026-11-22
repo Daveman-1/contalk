@@ -234,18 +234,21 @@ export default function BrowsePage() {
           />
         </div>
 
-        {/* Column 3: Main Chat Window */}
+        {/* Column 3: Main Chat Window (edge-to-edge on mobile for max typing space) */}
         <div
-          className={`${activeUser ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-3 sm:p-6`}
+          className={`${activeUser ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-0 sm:p-6`}
           style={{ background: 'var(--bg-app)' }}
         >
           {activeUser ? (
             <>
-              <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-0 sm:py-0 sm:mb-4 border-b sm:border-b-0 flex-shrink-0"
+                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+              >
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <button
                     onClick={() => setActiveUserId(null)}
-                    className="md:hidden btn-soft p-2"
+                    className="md:hidden btn-soft p-2 flex-shrink-0"
                     aria-label="Back to people"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -256,18 +259,17 @@ export default function BrowsePage() {
                     avatar={activeUser.avatar}
                     seed={activeUser.id}
                     name={activeUser.name}
-                    size={40}
+                    size={36}
                     online={activeUser.online}
                   />
                   <div className="min-w-0">
-                    <h1 className="text-base sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                      Chat with {activeUser.name}
+                    <h1 className="text-sm sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {activeUser.name}
                     </h1>
-                    <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
                       <span className={activeUser.online ? 'online-dot' : 'offline-dot'} />
                       <span className="truncate">
-                        {activeUser.isAnon ? 'Anonymous user' : 'Registered account'} ·{' '}
-                        {activeUser.online ? 'Online now' : 'Offline (messages saved)'}
+                        {activeUser.online ? 'Online' : 'Offline'} · {activeUser.isAnon ? 'Anon' : 'Account'}
                       </span>
                     </div>
                   </div>
@@ -275,7 +277,7 @@ export default function BrowsePage() {
               </div>
 
               <div
-                className="flex-1 min-h-0 rounded-2xl border overflow-hidden"
+                className="flex-1 min-h-0 sm:rounded-2xl sm:border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
               >
                 {loadingHistory && messages.length === 0 ? (

@@ -84,7 +84,44 @@ export default function WorkspaceShell({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [identity, setIdentity] = useState({ id: '', name: 'Anon', isAnon: true, avatar: 'cloud' });
+  const [vpStyle, setVpStyle] = useState(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const searchInputRef = useRef(null);
+
+  // Sync Workspace container height & offset to iOS Safari visualViewport when keyboard opens
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const updateViewport = () => {
+      if (window.innerWidth >= 1024) {
+        setVpStyle(null);
+        setKeyboardOpen(false);
+        return;
+      }
+      const vv = window.visualViewport;
+      const isKb = window.innerHeight - vv.height > 140;
+      setKeyboardOpen(isKb);
+      setVpStyle({
+        position: 'fixed',
+        top: `${Math.max(0, Math.round(vv.offsetTop))}px`,
+        left: 0,
+        right: 0,
+        height: `${Math.round(vv.height)}px`,
+      });
+    };
+
+    updateViewport();
+    const vv = window.visualViewport;
+    vv.addEventListener('resize', updateViewport);
+    vv.addEventListener('scroll', updateViewport);
+    window.addEventListener('resize', updateViewport);
+
+    return () => {
+      vv.removeEventListener('resize', updateViewport);
+      vv.removeEventListener('scroll', updateViewport);
+      window.removeEventListener('resize', updateViewport);
+    };
+  }, []);
 
   useEffect(() => {
     const sync = () => setIdentity(getIdentity());
@@ -297,7 +334,10 @@ export default function WorkspaceShell({
   );
 
   return (
-    <div className="h-dvh-screen w-full flex overflow-hidden" style={{ background: 'var(--bg-app)' }}>
+    <div
+      className="h-dvh-screen w-full flex overflow-hidden"
+      style={{ background: 'var(--bg-app)', ...(vpStyle || {}) }}
+    >
       {/* Desktop Left Main Sidebar (Image 2 Column 1) */}
       <aside
         className={`hidden lg:block flex-shrink-0 sidebar-wash transition-all duration-200 ${
@@ -442,12 +482,12 @@ export default function WorkspaceShell({
         </header>
 
         {/* Main Page Content */}
-        <div className={`flex-1 min-h-0 overflow-hidden ${showMobileBottomNav ? 'pb-16 sm:pb-0' : ''}`}>
+        <div className={`flex-1 min-h-0 overflow-hidden ${showMobileBottomNav && !keyboardOpen ? 'pb-16 sm:pb-0' : ''}`}>
           {children}
         </div>
       </div>
 
-      {showMobileBottomNav && <MobileBottomNav />}
+      {showMobileBottomNav && !keyboardOpen && <MobileBottomNav />}
       {avatarModalOpen && (
         <AvatarPickerModal
           currentAvatar={identity.avatar}

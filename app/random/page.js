@@ -298,45 +298,48 @@ export default function RandomChatPage() {
       }
       showMobileBottomNav={chatState !== STATES.CHATTING}
     >
-      <div className="h-full flex flex-col p-3 sm:p-6 overflow-y-auto" style={{ background: 'var(--bg-app)' }}>
+      <div className="h-full flex flex-col p-0 sm:p-6 overflow-y-auto" style={{ background: 'var(--bg-app)' }}>
         {chatState === STATES.CHATTING ? (
           <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto min-h-0">
-            <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <UserAvatar avatar={strangerAvatar} seed={strangerName} name={strangerName} size={40} online={true} />
+            <div
+              className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-0 sm:py-0 sm:mb-4 border-b sm:border-b-0 flex-shrink-0"
+              style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <UserAvatar avatar={strangerAvatar} seed={strangerName} name={strangerName} size={36} online={true} />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-base sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                      Chat with {strangerName}
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <h1 className="text-sm sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {strangerName}
                     </h1>
                     <span
-                      className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+                      className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={{
                         background: strangerGender === 'female' ? 'rgba(236, 72, 153, 0.16)' : 'rgba(99, 102, 241, 0.2)',
                         color: strangerGender === 'female' ? '#F472B6' : '#818CF8',
                       }}
                     >
-                      {strangerGender === 'female' ? '♀ Female' : '♂ Male'}
+                      {strangerGender === 'female' ? '♀' : '♂'} <span className="hidden sm:inline">{genderLabel(strangerGender)}</span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
                     <span className="online-dot"></span>
-                    <span>{strangerIsAnon ? 'Anonymous stranger' : 'Registered account'} · Connected</span>
+                    <span className="truncate">{strangerIsAnon ? 'Anon' : 'Account'} · Connected</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={handleSkip} className="btn-cta text-xs sm:text-sm py-2 px-3.5 sm:px-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <button onClick={handleSkip} className="btn-cta text-xs sm:text-sm py-1.5 sm:py-2 px-3 sm:px-4">
                   Skip →
                 </button>
-                <button onClick={handleStop} className="btn-danger-soft text-xs sm:text-sm py-2 px-3">
+                <button onClick={handleStop} className="btn-danger-soft text-xs sm:text-sm py-1.5 sm:py-2 px-2.5 sm:px-3">
                   End
                 </button>
               </div>
             </div>
 
             <div
-              className="flex-1 min-h-0 rounded-2xl border overflow-hidden"
+              className="flex-1 min-h-0 sm:rounded-2xl sm:border overflow-hidden"
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
             >
               <ChatBox
@@ -352,7 +355,7 @@ export default function RandomChatPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center p-4 sm:p-0">
             <div className="surface-card rounded-2xl p-7 sm:p-10 w-full max-w-lg text-center animate-fadeIn">
               <div
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-5"

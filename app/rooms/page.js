@@ -320,18 +320,21 @@ export default function RoomsPage() {
           </div>
         </div>
 
-        {/* Column 3: Active Room Chat */}
+        {/* Column 3: Active Room Chat (edge-to-edge on mobile for max typing space) */}
         <div
-          className={`${activeRoom ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-3 sm:p-6`}
+          className={`${activeRoom ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0 h-full p-0 sm:p-6`}
           style={{ background: 'var(--bg-app)' }}
         >
           {activeRoom ? (
             <>
-              <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-0 sm:py-0 sm:mb-4 border-b sm:border-b-0 flex-shrink-0"
+                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+              >
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <button
                     onClick={() => setActiveRoomId(null)}
-                    className="md:hidden btn-soft p-2"
+                    className="md:hidden btn-soft p-2 flex-shrink-0"
                     aria-label="Back to rooms"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -339,16 +342,16 @@ export default function RoomsPage() {
                     </svg>
                   </button>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{activeRoom.icon || '💬'}</span>
-                      <h1 className="text-base sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base sm:text-lg">{activeRoom.icon || '💬'}</span>
+                      <h1 className="text-sm sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                         {activeRoom.name}
                       </h1>
-                      <span className="text-xs font-mono" style={{ color: 'var(--accent-purple)' }}>
+                      <span className="hidden sm:inline text-xs font-mono" style={{ color: 'var(--accent-purple)' }}>
                         #{activeRoom.slug}
                       </span>
                     </div>
-                    <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-[11px] sm:text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                       {activeRoom.description || 'Public group chat room'}
                     </p>
                   </div>
@@ -356,16 +359,17 @@ export default function RoomsPage() {
 
                 <button
                   onClick={() => setShowMembers((v) => !v)}
-                  className="btn-soft px-3 py-1.5 text-xs flex items-center gap-2 flex-shrink-0"
+                  className="btn-soft px-2.5 sm:px-3 py-1.5 text-xs flex items-center gap-1.5 flex-shrink-0"
                 >
                   <span className="online-dot"></span>
-                  <span>{activeMembers.length} in room</span>
+                  <span>{activeMembers.length}</span>
+                  <span className="hidden sm:inline">in room</span>
                 </button>
               </div>
 
               {showMembers && (
                 <div
-                  className="mb-3 px-4 py-2.5 rounded-xl border flex flex-wrap items-center gap-2 animate-fadeIn flex-shrink-0"
+                  className="px-3 sm:px-4 py-2.5 sm:mb-3 border-b sm:border sm:rounded-xl flex flex-wrap items-center gap-2 animate-fadeIn flex-shrink-0"
                   style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
                 >
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>In room:</span>
@@ -387,7 +391,7 @@ export default function RoomsPage() {
               )}
 
               <div
-                className="flex-1 min-h-0 rounded-2xl border overflow-hidden"
+                className="flex-1 min-h-0 sm:rounded-2xl sm:border overflow-hidden"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
               >
                 {loadingHistory && messages.length === 0 ? (

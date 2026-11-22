@@ -21,13 +21,34 @@ export default function ChatBox({
   const [input, setInput] = useState('');
   const [openDrawer, setOpenDrawer] = useState(null); // null | 'stickers' | 'gifs'
   const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
   const pickerWrapperRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
 
+  const scrollToBottom = (instant = false) => {
+    bottomRef.current?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom(false);
   }, [messages, isPartnerTyping]);
+
+  // Keep chat scrolled to latest message when mobile keyboard resizes viewport
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const onResize = () => {
+      setTimeout(() => scrollToBottom(true), 60);
+    };
+    window.visualViewport.addEventListener('resize', onResize);
+    return () => window.visualViewport.removeEventListener('resize', onResize);
+  }, []);
+
+  const syncTextareaHeight = (el) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 104)}px`;
+  };
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -56,6 +77,7 @@ export default function ChatBox({
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInput(val);
+    syncTextareaHeight(e.target);
 
     if (!onTyping || disabled) return;
 
@@ -80,6 +102,9 @@ export default function ChatBox({
     stopTyping();
     onSend(text);
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
   const handleSendMediaToken = (encoded) => {
@@ -295,11 +320,19 @@ export default function ChatBox({
           </button>
 
           <textarea
-            className="flex-1 bg-transparent outline-none resize-none text-sm py-1 px-1"
-            style={{ color: 'var(--text-primary)', minHeight: '32px', maxHeight: '110px' }}
+            ref={textareaRef}
+            className="flex-1 bg-transparent outline-none resize-none text-base sm:text-sm leading-snug py-1.5 px-1"
+            style={{ color: 'var(--text-primary)', minHeight: '36px', maxHeight: '104px' }}
             placeholder={disabled ? 'Chat ended' : placeholder}
             value={input}
             onChange={handleInputChange}
+            onFocus={() => {
+              setOpenDrawer(null);
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                scrollToBottom(true);
+              }, 120);
+            }}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             rows={1}
