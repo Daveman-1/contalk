@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+
+# Local runtime data & env secrets
+contalk-data.json
+contalk-data.json.*.tmp
+contalk.db
+.env
+.env.local
+.env.*.local
+
+# Logs & OS files
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
