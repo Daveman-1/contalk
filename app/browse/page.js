@@ -11,8 +11,8 @@ import { MessageSquare } from 'lucide-react';
 
 export default function BrowsePage() {
   const { onlineUsers, unreadBySenderId, clearSenderUnread, setActiveDmPartnerId } = useNotifications();
-  const [registeredUsers, setRegisteredUsers] = useState([]);
   const [activeUserId, setActiveUserId] = useState(null);
+  const [activeUserSnapshot, setActiveUserSnapshot] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -26,64 +26,44 @@ export default function BrowsePage() {
     return () => setActiveDmPartnerId(null);
   }, [activeUserId, setActiveDmPartnerId, clearSenderUnread]);
 
-  const fetchRegisteredUsers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/users', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (Array.isArray(data.users)) setRegisteredUsers(data.users);
-    } catch (err) {
-      console.error('Failed to load accounts:', err);
-    }
-  }, []);
-
   useEffect(() => {
     const syncIdentity = () => {
       const identity = getIdentity();
       setMyId(identity.id);
     };
     syncIdentity();
-    fetchRegisteredUsers();
-
-    const usersTimer = setInterval(() => {
-      if (!document.hidden) fetchRegisteredUsers();
-    }, 10000);
 
     window.addEventListener('auth_change', syncIdentity);
     return () => {
-      clearInterval(usersTimer);
       window.removeEventListener('auth_change', syncIdentity);
     };
-  }, [fetchRegisteredUsers]);
+  }, []);
 
-  const mergedUsers = useMemo(() => {
+  // Only show people who are currently online (both anonymous visitors & registered accounts)
+  const onlineDirectory = useMemo(() => {
     const byId = new Map();
-    for (const acc of registeredUsers) {
-      byId.set(acc.id, {
-        id: acc.id,
-        name: acc.username,
-        avatar: acc.avatar || null,
-        isAnon: false,
-        online: false,
-      });
-    }
     for (const u of onlineUsers) {
-      const prev = byId.get(u.id);
+      if (!u || !u.id) continue;
       byId.set(u.id, {
         id: u.id,
         name: u.name,
-        avatar: u.avatar || prev?.avatar || null,
+        avatar: u.avatar || null,
         isAnon: Boolean(u.isAnon),
         online: true,
       });
     }
     return Array.from(byId.values());
-  }, [registeredUsers, onlineUsers]);
+  }, [onlineUsers]);
 
-  const activeUser = useMemo(
-    () => mergedUsers.find((u) => u.id === activeUserId) || null,
-    [mergedUsers, activeUserId]
-  );
+  const activeUser = useMemo(() => {
+    if (!activeUserId) return null;
+    const liveMatch = onlineDirectory.find((u) => u.id === activeUserId);
+    if (liveMatch) return liveMatch;
+    if (activeUserSnapshot && activeUserSnapshot.id === activeUserId) {
+      return { ...activeUserSnapshot, online: false };
+    }
+    return null;
+  }, [onlineDirectory, activeUserId, activeUserSnapshot]);
 
   const pollMessages = useCallback(async (partnerId, initial = false) => {
     const identity = getIdentity();
@@ -131,22 +111,23 @@ export default function BrowsePage() {
 
   const handleChatWith = useCallback((user) => {
     setActiveUserId(user.id);
+    setActiveUserSnapshot(user);
     clearSenderUnread(user.id);
   }, [clearSenderUnread]);
 
   // Auto-open DM when navigated from /feed?chatWith=<userId> or Notification toast
   const autoOpenedRef = useRef(false);
   useEffect(() => {
-    if (autoOpenedRef.current || typeof window === 'undefined' || mergedUsers.length === 0) return;
+    if (autoOpenedRef.current || typeof window === 'undefined' || onlineDirectory.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get('chatWith');
     if (!targetId) return;
-    const match = mergedUsers.find((u) => u.id === targetId && u.id !== myId);
+    const match = onlineDirectory.find((u) => u.id === targetId && u.id !== myId);
     if (match) {
       autoOpenedRef.current = true;
       handleChatWith(match);
     }
-  }, [mergedUsers, myId, handleChatWith]);
+  }, [onlineDirectory, myId, handleChatWith]);
 
   const handleSend = async (content) => {
     if (!activeUser) return;
@@ -224,7 +205,7 @@ export default function BrowsePage() {
           style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-panel)' }}
         >
           <UserList
-            users={mergedUsers}
+            users={onlineDirectory}
             onChat={handleChatWith}
             activeUserId={activeUser?.id}
             myId={myId}
@@ -248,7 +229,10 @@ export default function BrowsePage() {
               >
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <button
-                    onClick={() => setActiveUserId(null)}
+                    onClick={() => {
+                      setActiveUserId(null);
+                      setActiveUserSnapshot(null);
+                    }}
                     className="md:hidden btn-soft p-2 flex-shrink-0"
                     aria-label="Back to people"
                   >
@@ -314,7 +298,7 @@ export default function BrowsePage() {
                 Select someone to chat
               </h2>
               <p className="text-xs sm:text-sm max-w-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                Choose any online anonymous visitor or any created account from the Direct Messages list to start a private conversation.
+                Only people who are currently online appear here — anonymous or signed in. Pick anyone online to start a private conversation.
               </p>
             </div>
           )}

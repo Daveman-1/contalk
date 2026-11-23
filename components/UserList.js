@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import UserAvatar from '@/components/UserAvatar';
-import { Users, Radio, AtSign, Shield } from 'lucide-react';
+import { Radio, AtSign, Shield } from 'lucide-react';
 
 export default function UserList({
   users,
@@ -15,12 +15,15 @@ export default function UserList({
   onFilterChange = () => {},
   search = '',
 }) {
+  const onlineOthers = useMemo(
+    () => users.filter((u) => u.id !== myId && u.online !== false),
+    [users, myId]
+  );
+
   const visibleUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return users
-      .filter((u) => u.id !== myId)
+    return onlineOthers
       .filter((u) => {
-        if (filter === 'online') return u.online;
         if (filter === 'accounts') return !u.isAnon;
         if (filter === 'anon') return u.isAnon;
         return true;
@@ -29,25 +32,22 @@ export default function UserList({
       .sort((a, b) => {
         const unreadDiff = (unreadCounts[b.id] || 0) - (unreadCounts[a.id] || 0);
         if (unreadDiff !== 0) return unreadDiff;
-        if (a.online !== b.online) return a.online ? -1 : 1;
         if (a.isAnon !== b.isAnon) return a.isAnon ? 1 : -1;
         return a.name.localeCompare(b.name);
       });
-  }, [users, myId, filter, search, unreadCounts]);
+  }, [onlineOthers, filter, search, unreadCounts]);
 
-  const counts = useMemo(() => {
-    const others = users.filter((u) => u.id !== myId);
-    return {
-      all: others.length,
-      online: others.filter((u) => u.online).length,
-      accounts: others.filter((u) => !u.isAnon).length,
-      anon: others.filter((u) => u.isAnon).length,
-    };
-  }, [users, myId]);
+  const counts = useMemo(
+    () => ({
+      all: onlineOthers.length,
+      accounts: onlineOthers.filter((u) => !u.isAnon).length,
+      anon: onlineOthers.filter((u) => u.isAnon).length,
+    }),
+    [onlineOthers]
+  );
 
   const quickItems = [
-    { id: 'all', label: 'All People', icon: Users, count: counts.all },
-    { id: 'online', label: 'Online Now', icon: Radio, count: counts.online, green: true },
+    { id: 'all', label: 'Online Now', icon: Radio, count: counts.all, green: true },
     { id: 'accounts', label: 'Accounts', icon: AtSign, count: counts.accounts },
     { id: 'anon', label: 'Anonymous', icon: Shield, count: counts.anon },
   ];
@@ -105,10 +105,10 @@ export default function UserList({
         })}
       </div>
 
-      {/* Direct Messages Heading (Image 2 style) */}
+      {/* Online Users Heading */}
       <div className="pt-4 pb-2 px-2 flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Direct Messages
+          Online Now
         </span>
         <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{visibleUsers.length}</span>
       </div>
@@ -117,7 +117,7 @@ export default function UserList({
       <div className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
         {visibleUsers.length === 0 ? (
           <div className="py-10 text-center text-xs px-3" style={{ color: 'var(--text-muted)' }}>
-            {search ? 'No matching users' : 'No other users here yet. Share your link or open a second tab!'}
+            {search ? 'No matching online users' : 'No one else is online right now. Share your link or open a second tab!'}
           </div>
         ) : (
           visibleUsers.map((user) => {

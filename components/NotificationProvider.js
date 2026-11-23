@@ -65,6 +65,7 @@ export function NotificationProvider({ children }) {
 
   const activeDmPartnerIdRef = useRef(null);
   const activeRoomIdRef = useRef(null);
+  const lastPresenceIdRef = useRef(null);
   const pathnameRef = useRef(pathname);
   const soundEnabledRef = useRef(true);
   const seenInboxIdsRef = useRef(new Set());
@@ -151,11 +152,34 @@ export function NotificationProvider({ children }) {
     [router]
   );
 
+  const sendLeavePresence = useCallback((idToLeave, useBeacon = false) => {
+    if (typeof window === 'undefined' || !idToLeave) return;
+    const payload = JSON.stringify({ action: 'leave', id: idToLeave });
+    if (useBeacon && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      try {
+        navigator.sendBeacon('/api/presence', new Blob([payload], { type: 'application/json' }));
+        return;
+      } catch {}
+    }
+    fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
   // Unified App-Wide Presence Heartbeat (1 connection per tab instead of multiple sockets!)
   const sendHeartbeat = useCallback(async () => {
     if (typeof window === 'undefined') return;
     const identity = getIdentity();
     if (!identity.id) return;
+
+    // If user switched between Anon and Account, remove the previous identity immediately
+    if (lastPresenceIdRef.current && lastPresenceIdRef.current !== identity.id) {
+      sendLeavePresence(lastPresenceIdRef.current, false);
+    }
+    lastPresenceIdRef.current = identity.id;
 
     try {
       const res = await fetch('/api/presence', {
@@ -175,7 +199,7 @@ export function NotificationProvider({ children }) {
       if (data.roomPresence && typeof data.roomPresence === 'object') setRoomPresence(data.roomPresence);
       if (data.storage) setStorageMode(data.storage);
     } catch {}
-  }, []);
+  }, [sendLeavePresence]);
 
   // Poll DM Inbox for Real-Time Notifications
   const pollInbox = useCallback(async () => {
@@ -253,16 +277,25 @@ export function NotificationProvider({ children }) {
       pollInbox();
     };
 
+    const onPageExit = () => {
+      const id = lastPresenceIdRef.current || getIdentity().id;
+      if (id) sendLeavePresence(id, true);
+    };
+
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('auth_change', onAuthChange);
+    window.addEventListener('pagehide', onPageExit);
+    window.addEventListener('beforeunload', onPageExit);
 
     return () => {
       clearInterval(presenceTimer);
       clearInterval(inboxTimer);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('auth_change', onAuthChange);
+      window.removeEventListener('pagehide', onPageExit);
+      window.removeEventListener('beforeunload', onPageExit);
     };
-  }, [sendHeartbeat, pollInbox]);
+  }, [sendHeartbeat, sendLeavePresence, pollInbox]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
