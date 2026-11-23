@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import UserAvatar from '@/components/UserAvatar';
 import { getIdentity } from '@/lib/identity';
 import { getNotificationPreview } from '@/lib/stickers';
+import { X } from 'lucide-react';
 
 const NotificationContext = createContext({
   notifications: [],
@@ -363,11 +364,11 @@ export function NotificationProvider({ children }) {
                   </span>
                   <button
                     onClick={() => dismissToast(toast.id)}
-                    className="text-xs px-1"
+                    className="text-xs p-0.5 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
                     style={{ color: 'var(--text-muted)' }}
                     aria-label="Dismiss notification"
                   >
-                    ✕
+                    <X size={13} />
                   </button>
                 </div>
                 <p className="text-xs line-clamp-2 mt-0.5 break-words" style={{ color: 'var(--text-secondary)' }}>

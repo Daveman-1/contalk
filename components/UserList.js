@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import UserAvatar from '@/components/UserAvatar';
+import { Users, Radio, AtSign, Shield } from 'lucide-react';
 
 export default function UserList({
   users,
@@ -45,10 +46,10 @@ export default function UserList({
   }, [users, myId]);
 
   const quickItems = [
-    { id: 'all', label: 'All People', icon: '◎', count: counts.all },
-    { id: 'online', label: 'Online Now', icon: '●', count: counts.online, green: true },
-    { id: 'accounts', label: 'Accounts', icon: '@', count: counts.accounts },
-    { id: 'anon', label: 'Anonymous', icon: '🕵️', count: counts.anon },
+    { id: 'all', label: 'All People', icon: Users, count: counts.all },
+    { id: 'online', label: 'Online Now', icon: Radio, count: counts.online, green: true },
+    { id: 'accounts', label: 'Accounts', icon: AtSign, count: counts.accounts },
+    { id: 'anon', label: 'Anonymous', icon: Shield, count: counts.anon },
   ];
 
   return (
@@ -93,8 +94,8 @@ export default function UserList({
               }}
             >
               <span className="flex items-center gap-2.5">
-                <span className="w-4 text-center text-xs" style={{ color: item.green ? '#22c55e' : 'inherit' }}>
-                  {item.icon}
+                <span className="w-4 flex items-center justify-center text-xs" style={{ color: item.green ? '#22c55e' : 'inherit' }}>
+                  <item.icon size={14} />
                 </span>
                 <span>{item.label}</span>
               </span>

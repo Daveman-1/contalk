@@ -10,13 +10,15 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import UserAvatar from '@/components/UserAvatar';
 import AvatarPickerModal from '@/components/AvatarPickerModal';
 import { SunIcon, MoonIcon } from '@/components/ThemeIcon';
+import RoomIcon from '@/components/RoomIcon';
+import { X } from 'lucide-react';
 import { getIdentity } from '@/lib/identity';
 
 const PINNED_ROOMS = [
-  { id: 'room_general', label: 'General Lobby', icon: '💬' },
-  { id: 'room_tech', label: 'Tech & Coding', icon: '💻' },
-  { id: 'room_gaming', label: 'Gaming', icon: '🎮' },
-  { id: 'room_confessions', label: 'Confessions', icon: '🕵️' },
+  { id: 'room_general', label: 'General Lobby', icon: 'message' },
+  { id: 'room_tech', label: 'Tech & Coding', icon: 'code' },
+  { id: 'room_gaming', label: 'Gaming', icon: 'gamepad' },
+  { id: 'room_confessions', label: 'Confessions', icon: 'shield' },
 ];
 
 const MAIN_MENU = [
@@ -202,7 +204,9 @@ export default function WorkspaceShell({
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 title={room.label}
               >
-                <span className="text-sm flex-shrink-0">{room.icon}</span>
+                <span className="flex-shrink-0 flex items-center justify-center text-sm" style={{ color: 'var(--brand-primary)' }}>
+                  <RoomIcon icon={room.icon} size={15} />
+                </span>
                 {!collapsed && <span className="truncate">{room.label}</span>}
               </Link>
             ))}
@@ -470,10 +474,10 @@ export default function WorkspaceShell({
                   <button
                     type="button"
                     onClick={() => onSearchChange('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs px-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs px-1 flex items-center justify-center"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    ✕
+                    <X size={13} />
                   </button>
                 )}
               </div>

@@ -12,6 +12,7 @@ import { useNotifications } from '@/components/NotificationProvider';
 import { SunIcon, MoonIcon } from '@/components/ThemeIcon';
 import { useTheme } from '@/components/ThemeProvider';
 import { getIdentity } from '@/lib/identity';
+import { Home, Rss, MessageSquare, Hash, Shuffle, Plus } from 'lucide-react';
 
 export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
@@ -111,61 +112,37 @@ export default function HomePage() {
 
         <nav className="flex flex-col items-center gap-1.5 w-full px-1.5">
           {[
-            { href: '/', label: 'Home', title: 'Home', icon: 'home', active: true },
-            { href: '/feed', label: 'Feed', title: 'Posts Feed', icon: 'feed', active: false },
-            { href: '/browse', label: 'Chats', title: 'Direct Messages & People', icon: 'messages', active: false },
-            { href: '/rooms', label: 'Rooms', title: 'Group Chat Rooms', icon: 'rooms', active: false },
-            { href: '/random', label: 'Random', title: 'Random Male / Female Chat', icon: 'random', active: false },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={item.title}
-              className="w-full py-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all group"
-              style={{
-                background: item.active ? 'var(--bg-active)' : 'transparent',
-                color: item.active ? 'var(--brand-primary)' : 'var(--text-secondary)',
-              }}
-              onMouseEnter={(e) => {
-                if (!item.active) e.currentTarget.style.background = 'var(--bg-hover)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                if (!item.active) e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = item.active ? 'var(--brand-primary)' : 'var(--text-secondary)';
-              }}
-            >
-              {item.icon === 'home' && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V20a1 1 0 001 1h12a1 1 0 001-1V9.5" />
-                </svg>
-              )}
-              {item.icon === 'feed' && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 6h16M4 12h16M4 18h10" />
-                </svg>
-              )}
-              {item.icon === 'messages' && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-              )}
-              {item.icon === 'rooms' && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
-                  <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
-                </svg>
-              )}
-              {item.icon === 'random' && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" />
-                  <polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" />
-                  <line x1="4" y1="4" x2="9" y2="9" />
-                </svg>
-              )}
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
-            </Link>
-          ))}
+            { href: '/', label: 'Home', title: 'Home', icon: Home, active: true },
+            { href: '/feed', label: 'Feed', title: 'Posts Feed', icon: Rss, active: false },
+            { href: '/browse', label: 'Chats', title: 'Direct Messages & People', icon: MessageSquare, active: false },
+            { href: '/rooms', label: 'Rooms', title: 'Group Chat Rooms', icon: Hash, active: false },
+            { href: '/random', label: 'Random', title: 'Random Male / Female Chat', icon: Shuffle, active: false },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.title}
+                className="w-full py-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all group"
+                style={{
+                  background: item.active ? 'var(--bg-active)' : 'transparent',
+                  color: item.active ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!item.active) e.currentTarget.style.background = 'var(--bg-hover)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!item.active) e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = item.active ? 'var(--brand-primary)' : 'var(--text-secondary)';
+                }}
+              >
+                <Icon size={18} strokeWidth={item.active ? 2.3 : 1.9} />
+                <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         <button
@@ -233,10 +210,10 @@ export default function HomePage() {
               <Link href="/login">
                 <button className="btn-cta px-3 sm:px-4 py-2 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-lg">
                   <span
-                    className="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold text-white"
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-white"
                     style={{ background: 'linear-gradient(135deg, #5B4AE3, #12B89A)' }}
                   >
-                    +
+                    <Plus size={13} strokeWidth={2.8} />
                   </span>
                   <span>Sign In</span>
                   <span className="hidden sm:inline">/ Join</span>
@@ -260,30 +237,30 @@ export default function HomePage() {
 
         {/* ─── COMPACT HERO + 3 REALISTIC CARDS ─────────────────────────────── */}
         <section className="flex flex-col items-center px-4 sm:px-8 pt-4 sm:pt-6 pb-6">
-          <div className="flex flex-col items-center w-full max-w-[740px] text-center">
+          <div className="flex flex-col items-center w-full max-w-5xl text-center">
             <div className="mb-3">
               <ConTalkLogo variant="full" size={148} showTagline={true} />
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-6" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-6 max-w-xl" style={{ color: 'var(--text-primary)' }}>
               Post, chat, or meet strangers.
             </h1>
 
             {/* 3 Vibrant Gradient Action Cards with Layered Photo Previews */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 w-full">
               {/* Card 1: Post */}
               <Link
                 href="/feed"
-                className="card-grad-indigo relative rounded-2xl p-4 sm:p-5 h-[126px] sm:h-[136px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
+                className="card-grad-indigo relative rounded-2xl p-4 sm:p-5 h-[130px] sm:h-[142px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
               >
-                <p className="text-white font-semibold text-sm leading-snug max-w-[140px] relative z-10 drop-shadow-sm">
+                <p className="text-white font-semibold text-sm sm:text-[15px] leading-snug max-w-[210px] sm:max-w-[150px] md:max-w-[190px] relative z-10 drop-shadow-sm">
                   Share a live post with everyone
                 </p>
-                <span className="inline-block mt-1.5 text-[11px] text-white/85 font-medium relative z-10">
+                <span className="inline-block mt-2 text-[11px] text-white/90 font-medium relative z-10">
                   Posts Feed →
                 </span>
                 <div className="absolute -bottom-4 right-5 w-24 h-20 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 rotate-[-14deg] transition-transform duration-300 group-hover:rotate-[-10deg]" />
-                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] rounded-xl overflow-hidden border-2 border-white/45 shadow-2xl rotate-[-6deg] transition-all duration-300 group-hover:rotate-[-1deg] group-hover:scale-105">
+                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] sm:w-32 sm:h-[90px] rounded-xl overflow-hidden border-2 border-white/45 shadow-2xl rotate-[-6deg] transition-all duration-300 group-hover:rotate-[-1deg] group-hover:scale-105">
                   <img src="/images/card-post.jpg" alt="Share a live post" className="w-full h-full object-cover" />
                 </div>
               </Link>
@@ -291,16 +268,16 @@ export default function HomePage() {
               {/* Card 2: Group Chat Rooms */}
               <Link
                 href="/rooms"
-                className="card-grad-sky relative rounded-2xl p-4 sm:p-5 h-[126px] sm:h-[136px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
+                className="card-grad-sky relative rounded-2xl p-4 sm:p-5 h-[130px] sm:h-[142px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
               >
-                <p className="text-white font-semibold text-sm leading-snug max-w-[140px] relative z-10 drop-shadow-sm">
+                <p className="text-white font-semibold text-sm sm:text-[15px] leading-snug max-w-[210px] sm:max-w-[150px] md:max-w-[190px] relative z-10 drop-shadow-sm">
                   Jump into live group chat rooms
                 </p>
-                <span className="inline-block mt-1.5 text-[11px] text-white/90 font-medium relative z-10">
+                <span className="inline-block mt-2 text-[11px] text-white/90 font-medium relative z-10">
                   Group Rooms →
                 </span>
                 <div className="absolute -bottom-4 right-5 w-24 h-20 rounded-xl bg-white/25 backdrop-blur-sm border border-white/35 rotate-[12deg] transition-transform duration-300 group-hover:rotate-[8deg]" />
-                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl rotate-[5deg] transition-all duration-300 group-hover:rotate-[1deg] group-hover:scale-105">
+                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] sm:w-32 sm:h-[90px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl rotate-[5deg] transition-all duration-300 group-hover:rotate-[1deg] group-hover:scale-105">
                   <img src="/images/card-group.jpg" alt="Group chat rooms" className="w-full h-full object-cover" />
                 </div>
               </Link>
@@ -308,16 +285,16 @@ export default function HomePage() {
               {/* Card 3: Random People */}
               <Link
                 href="/random"
-                className="card-grad-prism relative rounded-2xl p-4 sm:p-5 h-[126px] sm:h-[136px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
+                className="card-grad-prism relative rounded-2xl p-4 sm:p-5 h-[130px] sm:h-[142px] text-left overflow-hidden transition-all duration-200 hover:-translate-y-1 group"
               >
-                <p className="text-white font-semibold text-sm leading-snug max-w-[140px] relative z-10 drop-shadow-sm">
+                <p className="text-white font-semibold text-sm sm:text-[15px] leading-snug max-w-[210px] sm:max-w-[150px] md:max-w-[190px] relative z-10 drop-shadow-sm">
                   Match with random people live
                 </p>
-                <span className="inline-block mt-1.5 text-[11px] text-white/95 font-medium relative z-10 drop-shadow-sm">
+                <span className="inline-block mt-2 text-[11px] text-white/95 font-medium relative z-10 drop-shadow-sm">
                   Male / Female · Skip →
                 </span>
                 <div className="absolute -bottom-4 right-5 w-24 h-20 rounded-xl bg-black/20 backdrop-blur-sm border border-white/30 rotate-[-12deg] transition-transform duration-300 group-hover:rotate-[-7deg]" />
-                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl rotate-[-4deg] transition-all duration-300 group-hover:rotate-0 group-hover:scale-105">
+                <div className="absolute -bottom-3 -right-2 w-28 h-[84px] sm:w-32 sm:h-[90px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl rotate-[-4deg] transition-all duration-300 group-hover:rotate-0 group-hover:scale-105">
                   <img src="/images/card-random.jpg" alt="Random people chat" className="w-full h-full object-cover" />
                 </div>
               </Link>
@@ -326,7 +303,7 @@ export default function HomePage() {
             {/* Direct Messages Quick Link */}
             <Link
               href="/browse"
-              className="mt-4 inline-flex items-center gap-2 text-xs px-3.5 py-1.5 rounded-full transition-colors"
+              className="mt-5 inline-flex items-center gap-2 text-xs px-4 py-2 rounded-full transition-colors hover:border-[var(--brand-primary)]"
               style={{
                 background: 'var(--bg-elevated)',
                 color: 'var(--text-secondary)',

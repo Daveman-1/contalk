@@ -6,6 +6,24 @@ import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
+import { Shuffle, UserMinus } from 'lucide-react';
+
+function GenderIcon({ gender, size = 15 }) {
+  if (gender === 'female') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="5" />
+        <path d="M12 14v7M9 18h6" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="14" r="5" />
+      <path d="M19 5l-5.4 5.4M19 5h-5M19 5v5" />
+    </svg>
+  );
+}
 
 const STATES = {
   IDLE: 'idle',
@@ -15,8 +33,8 @@ const STATES = {
 };
 
 const CATEGORIES = [
-  { id: 'male', label: 'Male', icon: '♂' },
-  { id: 'female', label: 'Female', icon: '♀' },
+  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'Female' },
 ];
 
 export default function RandomChatPage() {
@@ -313,13 +331,14 @@ export default function RandomChatPage() {
                       {strangerName}
                     </h1>
                     <span
-                      className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                       style={{
                         background: strangerGender === 'female' ? 'rgba(236, 72, 153, 0.16)' : 'rgba(99, 102, 241, 0.2)',
                         color: strangerGender === 'female' ? '#F472B6' : '#818CF8',
                       }}
                     >
-                      {strangerGender === 'female' ? '♀' : '♂'} <span className="hidden sm:inline">{genderLabel(strangerGender)}</span>
+                      <GenderIcon gender={strangerGender} size={12} />
+                      <span className="hidden sm:inline">{genderLabel(strangerGender)}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -369,8 +388,8 @@ export default function RandomChatPage() {
 
               {chatState === STATES.IDLE && (
                 <>
-                  <div className="w-16 h-16 rounded-2xl card-grad-indigo mx-auto mb-5 flex items-center justify-center text-2xl text-white">
-                    🔀
+                  <div className="w-16 h-16 rounded-2xl card-grad-indigo mx-auto mb-5 flex items-center justify-center text-white">
+                    <Shuffle size={28} />
                   </div>
                   <h1 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>
                     Random Chat
@@ -400,7 +419,7 @@ export default function RandomChatPage() {
                                 borderColor: selected ? (cat.id === 'male' ? '#6366F1' : '#EC4899') : 'var(--border-subtle)',
                               }}
                             >
-                              <span className="text-base">{cat.icon}</span>
+                              <GenderIcon gender={cat.id} size={16} />
                               <span>{cat.label}</span>
                             </button>
                           );
@@ -429,7 +448,7 @@ export default function RandomChatPage() {
                               }}
                             >
                               <span className="flex items-center gap-1.5">
-                                <span className="text-base">{cat.icon}</span>
+                                <GenderIcon gender={cat.id} size={15} />
                                 <span>{cat.label}</span>
                               </span>
                               <span className="text-[11px] opacity-80 font-normal">
@@ -467,10 +486,10 @@ export default function RandomChatPage() {
               {chatState === STATES.DISCONNECTED && (
                 <>
                   <div
-                    className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center text-2xl"
-                    style={{ background: 'rgba(99, 102, 241, 0.14)' }}
+                    className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+                    style={{ background: 'rgba(99, 102, 241, 0.14)', color: 'var(--brand-primary)' }}
                   >
-                    👋
+                    <UserMinus size={28} />
                   </div>
                   <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                     Stranger disconnected

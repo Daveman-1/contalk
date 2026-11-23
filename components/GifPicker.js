@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { formatGifMessage } from '@/lib/stickers';
+import { X } from 'lucide-react';
 
 const QUICK_MOODS = [
   { id: '', label: 'Trending' },
@@ -75,11 +76,11 @@ export default function GifPicker({ onSelect, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="text-xs px-1.5 py-0.5 rounded-md"
+            className="text-xs p-1 rounded-md hover:bg-[var(--bg-hover)] flex items-center justify-center"
             style={{ color: 'var(--text-muted)' }}
             aria-label="Close GIFs"
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
 

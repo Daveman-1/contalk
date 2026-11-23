@@ -42,7 +42,7 @@ export async function POST(request) {
       name: trimmedName,
       slug,
       description: trimmedDesc || 'Public chat room',
-      icon: String(icon || '💬').slice(0, 4),
+      icon: String(icon || 'message').slice(0, 32),
       created_by: String(createdBy || 'Anonymous').slice(0, 32),
     });
 

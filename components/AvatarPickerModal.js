@@ -4,6 +4,7 @@ import { useState } from 'react';
 import UserAvatar from '@/components/UserAvatar';
 import { AVATARS } from '@/lib/avatars';
 import { getIdentity, setSavedAvatar } from '@/lib/identity';
+import { X } from 'lucide-react';
 
 export default function AvatarPickerModal({ currentAvatar, onClose, onSaved }) {
   const [selected, setSelected] = useState(currentAvatar);
@@ -44,11 +45,11 @@ export default function AvatarPickerModal({ currentAvatar, onClose, onSaved }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-sm"
+            className="p-1.5 text-sm rounded-lg hover:bg-[var(--bg-hover)] flex items-center justify-center"
             style={{ color: 'var(--text-muted)' }}
             aria-label="Close"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 

@@ -7,6 +7,7 @@ import UserList from '@/components/UserList';
 import UserAvatar from '@/components/UserAvatar';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity, getDmRoomId } from '@/lib/identity';
+import { MessageSquare } from 'lucide-react';
 
 export default function BrowsePage() {
   const { onlineUsers, unreadBySenderId, clearSenderUnread, setActiveDmPartnerId } = useNotifications();
@@ -304,10 +305,10 @@ export default function BrowsePage() {
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
             >
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-2xl"
-                style={{ background: 'var(--bg-elevated)' }}
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--brand-primary)' }}
               >
-                💬
+                <MessageSquare size={30} />
               </div>
               <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
                 Select someone to chat

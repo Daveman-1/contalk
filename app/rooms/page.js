@@ -4,10 +4,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
+import RoomIcon, { ROOM_ICON_KEYS } from '@/components/RoomIcon';
+import { MessageSquare, X } from 'lucide-react';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
 
-const ROOM_ICONS = ['💬', '💻', '🎮', '🎧', '🕵️', '🔥', '🚀', '🎨', '📚', '🌍', '🎬', '⚡'];
+const ROOM_ICONS = ROOM_ICON_KEYS;
 
 export default function RoomsPage() {
   const { roomPresence, setActiveRoomId: reportActiveRoom } = useNotifications();
@@ -21,7 +23,7 @@ export default function RoomsPage() {
   const [showMembers, setShowMembers] = useState(false);
   const [myId, setMyId] = useState('');
 
-  const [newRoom, setNewRoom] = useState({ name: '', description: '', icon: '💬' });
+  const [newRoom, setNewRoom] = useState({ name: '', description: '', icon: 'message' });
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -198,7 +200,7 @@ export default function RoomsPage() {
         setCreateError(data.error || 'Failed to create room');
       } else {
         setShowCreateModal(false);
-        setNewRoom({ name: '', description: '', icon: '💬' });
+        setNewRoom({ name: '', description: '', icon: 'message' });
         await fetchRooms();
         handleSelectRoom(data.room);
       }
@@ -290,10 +292,10 @@ export default function RoomsPage() {
                     }}
                   >
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                      style={{ background: 'var(--bg-elevated)' }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
                     >
-                      {room.icon || '💬'}
+                      <RoomIcon icon={room.icon} size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div
@@ -342,8 +344,10 @@ export default function RoomsPage() {
                     </svg>
                   </button>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base sm:text-lg">{activeRoom.icon || '💬'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-elevated)', color: 'var(--brand-primary)' }}>
+                        <RoomIcon icon={activeRoom.icon} size={18} />
+                      </span>
                       <h1 className="text-sm sm:text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                         {activeRoom.name}
                       </h1>
@@ -416,7 +420,12 @@ export default function RoomsPage() {
               className="flex-1 rounded-2xl border flex flex-col items-center justify-center text-center px-8"
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
             >
-              <div className="text-3xl mb-3">💬</div>
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--brand-primary)' }}
+              >
+                <MessageSquare size={28} />
+              </div>
               <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Pick a Room</h2>
               <p className="text-xs sm:text-sm max-w-sm" style={{ color: 'var(--text-muted)' }}>
                 Join any channel on the left or create your own room to chat with everyone live.
@@ -434,10 +443,10 @@ export default function RoomsPage() {
               <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Create Chat Room</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 text-sm"
+                className="p-1 rounded-lg hover:bg-[var(--bg-hover)] text-sm flex items-center justify-center"
                 style={{ color: 'var(--text-muted)' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -450,13 +459,14 @@ export default function RoomsPage() {
                       type="button"
                       key={icon}
                       onClick={() => setNewRoom((r) => ({ ...r, icon }))}
-                      className="h-10 rounded-xl text-lg flex items-center justify-center transition-all border"
+                      className="h-10 rounded-xl flex items-center justify-center transition-all border"
                       style={{
                         background: newRoom.icon === icon ? 'var(--bg-active)' : 'var(--bg-elevated)',
                         borderColor: newRoom.icon === icon ? 'var(--accent-purple)' : 'var(--border-subtle)',
+                        color: newRoom.icon === icon ? 'var(--accent-purple)' : 'var(--text-secondary)',
                       }}
                     >
-                      {icon}
+                      <RoomIcon icon={icon} size={18} />
                     </button>
                   ))}
                 </div>

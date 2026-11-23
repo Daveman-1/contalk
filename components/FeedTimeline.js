@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import UserAvatar from '@/components/UserAvatar';
 import { getIdentity } from '@/lib/identity';
+import { X, Sparkles } from 'lucide-react';
 
 const FEED_TABS = [
   { id: 'latest', label: 'Latest' },
@@ -429,7 +430,7 @@ export default function FeedTimeline({
                 }}
               >
                 <span>#{activeTag}</span>
-                <span>✕</span>
+                <X size={12} />
               </button>
             )}
           </div>
@@ -442,7 +443,9 @@ export default function FeedTimeline({
           </div>
         ) : visiblePosts.length === 0 ? (
           <div className="surface-card rounded-2xl p-12 text-center">
-            <div className="text-3xl mb-2">✨</div>
+            <div className="w-12 h-12 rounded-2xl mx-auto mb-2 flex items-center justify-center" style={{ background: 'var(--bg-elevated)', color: 'var(--accent-purple)' }}>
+              <Sparkles size={24} />
+            </div>
             <h3 className="text-base font-bold mb-1" style={{ color: 'var(--text-primary)' }}>No posts yet</h3>
             <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
               {activeTag || effectiveSearch
