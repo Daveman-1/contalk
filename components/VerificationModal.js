@@ -3,14 +3,11 @@
 import { useState, useEffect } from 'react';
 import {
   ShieldCheck,
-  CheckCircle2,
-  Lock,
-  RefreshCw,
   AlertCircle,
   X,
-  Shield,
   UserCheck,
 } from 'lucide-react';
+import GoogleRecaptcha from '@/components/GoogleRecaptcha';
 
 const VERIFIED_STORAGE_KEY = 'ct_safety_verified_v1';
 
@@ -42,145 +39,24 @@ export function setSafetyVerified() {
 }
 
 export function CaptchaWidget({ onVerified, verified, compact = false }) {
-  const [loading, setLoading] = useState(false);
-  const [challenge, setChallenge] = useState(null);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [error, setError] = useState('');
-
-  // Sample light challenge icons to ensure real human interaction
-  const ICONS_SET = [
-    { id: 'shield', label: 'Shield' },
-    { id: 'heart', label: 'Heart' },
-    { id: 'star', label: 'Star' },
-    { id: 'rocket', label: 'Rocket' },
-  ];
-
-  const handleInitialClick = () => {
-    if (verified || loading) return;
-    setLoading(true);
-    setError('');
-
-    // Quick verification simulation
-    setTimeout(() => {
-      setLoading(false);
-      // Give a quick micro-challenge: "Select the Shield"
-      const target = ICONS_SET[0];
-      // Shuffle choices
-      const shuffled = [...ICONS_SET].sort(() => Math.random() - 0.5);
-      setChallenge({ target, choices: shuffled });
-    }, 700);
-  };
-
-  const handleSelectChoice = (choiceId) => {
-    setSelectedAnswer(choiceId);
-    if (challenge && choiceId === challenge.target.id) {
-      setChallenge(null);
-      onVerified(true);
-    } else {
-      setError('Incorrect. Please try again.');
-      setTimeout(() => {
-        setError('');
-        // Reshuffle with new target
-        const newTarget = ICONS_SET[Math.floor(Math.random() * ICONS_SET.length)];
-        const newChoices = [...ICONS_SET].sort(() => Math.random() - 0.5);
-        setChallenge({ target: newTarget, choices: newChoices });
-      }, 900);
-    }
-  };
-
   return (
     <div
-      className={`rounded-xl border transition-all select-none ${
-        compact ? 'p-3' : 'p-4'
+      className={`rounded-xl border transition-all select-none flex flex-col items-center justify-center ${
+        compact ? 'p-2' : 'p-3'
       }`}
       style={{
         background: 'var(--bg-elevated)',
         borderColor: verified ? '#2EE6C5' : 'var(--border-subtle)',
       }}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleInitialClick}
-            disabled={verified || loading}
-            className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
-              verified
-                ? 'bg-[#2EE6C5] border-[#2EE6C5] text-[#0C0D18]'
-                : 'hover:border-[var(--brand-primary)]'
-            }`}
-            style={{
-              borderColor: verified ? '#2EE6C5' : 'var(--border-strong)',
-              background: verified ? '#2EE6C5' : 'var(--bg-surface)',
-            }}
-            aria-label="Verify you are human"
-          >
-            {loading ? (
-              <RefreshCw size={14} className="animate-spin text-[var(--brand-primary)]" />
-            ) : verified ? (
-              <CheckCircle2 size={18} strokeWidth={2.8} />
-            ) : (
-              <span className="w-2.5 h-2.5 rounded-sm bg-transparent" />
-            )}
-          </button>
-
-          <div>
-            <div className="text-xs sm:text-sm font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-              <span>{verified ? 'Human verified' : 'Are you human?'}</span>
-              {verified && <span className="text-[#2EE6C5] text-xs">✓</span>}
-            </div>
-            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {verified ? 'Verification confirmed' : 'Click to verify you are not a bot'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end opacity-60 text-[10px] tracking-tight">
-          <div className="flex items-center gap-1 font-mono font-semibold" style={{ color: 'var(--text-muted)' }}>
-            <Lock size={10} />
-            <span>ConTalk Guard</span>
-          </div>
-          <span style={{ color: 'var(--text-muted)' }}>Privacy &amp; Terms</span>
-        </div>
-      </div>
-
-      {/* Mini Interactive Puzzle Challenge */}
-      {challenge && !verified && (
-        <div className="mt-3 pt-3 border-t animate-fadeIn" style={{ borderColor: 'var(--border-subtle)' }}>
-          <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-            Select the <strong className="text-[var(--brand-mint)] underline">{challenge.target.label}</strong>:
-          </p>
-
-          <div className="grid grid-cols-4 gap-2">
-            {challenge.choices.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => handleSelectChoice(c.id)}
-                className="py-2 rounded-lg border text-xs font-medium flex flex-col items-center justify-center gap-1 hover:border-[var(--brand-primary)] transition-all"
-                style={{
-                  background: selectedAnswer === c.id ? 'var(--bg-active)' : 'var(--bg-surface)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {c.id === 'shield' && <Shield size={16} className="text-[#2EE6C5]" />}
-                {c.id === 'heart' && <span className="text-base text-rose-400">♥</span>}
-                {c.id === 'star' && <span className="text-base text-amber-400">★</span>}
-                {c.id === 'rocket' && <span className="text-base text-indigo-400">▲</span>}
-                <span className="text-[10px]">{c.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {error && (
-            <p className="text-[11px] text-rose-400 mt-2 flex items-center gap-1">
-              <AlertCircle size={12} />
-              <span>{error}</span>
-            </p>
-          )}
-        </div>
-      )}
+      <GoogleRecaptcha
+        onVerify={(token) => {
+          if (onVerified) onVerified(Boolean(token));
+        }}
+        onExpire={() => {
+          if (onVerified) onVerified(false);
+        }}
+      />
     </div>
   );
 }
@@ -193,7 +69,6 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Check if already verified
       if (isSafetyVerified()) {
         setAgeConfirmed(true);
         setConsentConfirmed(true);
@@ -208,7 +83,7 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
 
   const handleConfirm = () => {
     if (!allChecked) {
-      setErrorMsg('Please complete all 3 requirements to continue.');
+      setErrorMsg('Please complete all 3 requirements (Age, Consent, and reCAPTCHA).');
       return;
     }
     setSafetyVerified();
@@ -239,7 +114,7 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
               Safety &amp; Verification Gate
             </h2>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Confirm your age, consent, and humanity before entering.
+              Confirm your age, consent, and Google reCAPTCHA before entering.
             </p>
           </div>
         </div>
@@ -305,23 +180,34 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
             </div>
           </label>
 
-          {/* 3. Captcha — Are you human? */}
+          {/* 3. Google reCAPTCHA v2 Checkbox */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs sm:text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                3. Bot Check: Are you human?
+                3. Security Check: Are you human?
               </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase bg-emerald-500/20 text-emerald-300">
                 Required
               </span>
             </div>
-            <CaptchaWidget
-              verified={captchaVerified}
-              onVerified={(v) => {
-                setCaptchaVerified(v);
-                setErrorMsg('');
+
+            <div
+              className="p-3 rounded-xl border flex flex-col items-center justify-center transition-colors"
+              style={{
+                background: 'var(--bg-elevated)',
+                borderColor: captchaVerified ? '#2EE6C5' : 'var(--border-subtle)',
               }}
-            />
+            >
+              <GoogleRecaptcha
+                onVerify={(token) => {
+                  setCaptchaVerified(Boolean(token));
+                  setErrorMsg('');
+                }}
+                onExpire={() => {
+                  setCaptchaVerified(false);
+                }}
+              />
+            </div>
           </div>
         </div>
 
