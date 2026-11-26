@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ConTalkLogo from '@/components/ConTalkLogo';
+import { CaptchaWidget, setSafetyVerified } from '@/components/VerificationModal';
 
 export default function SignupPage() {
   const router = useRouter();
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [consentConfirmed, setConsentConfirmed] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('ct_token')) {
@@ -23,6 +27,21 @@ export default function SignupPage() {
 
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!ageConfirmed) {
+      setError('You must confirm that you are at least 18 years old to join.');
+      return;
+    }
+
+    if (!consentConfirmed) {
+      setError('You must consent to the Community Guidelines.');
+      return;
+    }
+
+    if (!captchaVerified) {
+      setError('Please complete the "Are you human?" verification check.');
       return;
     }
 
@@ -41,6 +60,7 @@ export default function SignupPage() {
       } else {
         localStorage.setItem('ct_token', data.token);
         localStorage.setItem('ct_user', JSON.stringify(data.user));
+        setSafetyVerified();
         window.dispatchEvent(new Event('auth_change'));
         router.push('/browse');
       }
@@ -107,13 +127,46 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* 1. Age (18+) */}
+            <label className="flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none text-xs transition-colors" style={{ background: ageConfirmed ? 'var(--bg-active)' : 'var(--bg-elevated)', borderColor: ageConfirmed ? 'var(--brand-primary)' : 'var(--border-subtle)' }}>
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(e) => setAgeConfirmed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-indigo-500 cursor-pointer"
+              />
+              <span style={{ color: 'var(--text-secondary)' }}>
+                I confirm that I am at least <strong style={{ color: 'var(--text-primary)' }}>18 years of age</strong>.
+              </span>
+            </label>
+
+            {/* 2. Consent */}
+            <label className="flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none text-xs transition-colors" style={{ background: consentConfirmed ? 'var(--bg-active)' : 'var(--bg-elevated)', borderColor: consentConfirmed ? 'var(--brand-primary)' : 'var(--border-subtle)' }}>
+              <input
+                type="checkbox"
+                checked={consentConfirmed}
+                onChange={(e) => setConsentConfirmed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-indigo-500 cursor-pointer"
+              />
+              <span style={{ color: 'var(--text-secondary)' }}>
+                I consent to the <strong style={{ color: 'var(--text-primary)' }}>Community Guidelines &amp; Terms</strong> (no harassment, hate speech, or recording).
+              </span>
+            </label>
+
+            {/* 3. Captcha — Are you human? */}
+            <CaptchaWidget
+              verified={captchaVerified}
+              onVerified={(v) => setCaptchaVerified(v)}
+              compact={true}
+            />
+
             {error && (
               <div className="text-red-500 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
 
-            <button type="submit" className="btn-cta w-full py-3 text-sm mt-2" disabled={loading}>
+            <button type="submit" className="btn-cta w-full py-3 text-sm mt-2 shadow-lg disabled:opacity-45" disabled={loading || !ageConfirmed || !consentConfirmed || !captchaVerified}>
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>

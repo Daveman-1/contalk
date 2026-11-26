@@ -6,7 +6,8 @@ import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
-import { Shuffle, UserMinus } from 'lucide-react';
+import { Shuffle, UserMinus, ShieldCheck } from 'lucide-react';
+import VerificationModal, { isSafetyVerified } from '@/components/VerificationModal';
 
 function GenderIcon({ gender, size = 15 }) {
   if (gender === 'female') {
@@ -52,6 +53,7 @@ export default function RandomChatPage() {
   const [lookingFor, setLookingFor] = useState('female');
   const [myId, setMyId] = useState('');
   const [myName, setMyName] = useState('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const roomIdRef = useRef(null);
   const chatStateRef = useRef(STATES.IDLE);
@@ -188,6 +190,10 @@ export default function RandomChatPage() {
   }, []);
 
   const handleStart = async () => {
+    if (!isSafetyVerified()) {
+      setShowVerificationModal(true);
+      return;
+    }
     const identity = getIdentity();
     setMessages([]);
     setIsStrangerTyping(false);
@@ -461,6 +467,11 @@ export default function RandomChatPage() {
                     </div>
                   </div>
 
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-muted)] mb-3">
+                    <ShieldCheck size={14} className="text-[#2EE6C5]" />
+                    <span>18+ Confirmed · Mutual Consent · Human Verified</span>
+                  </div>
+
                   <button onClick={handleStart} className="btn-cta w-full py-3.5 text-sm sm:text-base">
                     Start Chat with {genderLabel(lookingFor)} →
                   </button>
@@ -511,6 +522,15 @@ export default function RandomChatPage() {
           </div>
         )}
       </div>
+
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onComplete={() => {
+          setShowVerificationModal(false);
+          handleStart();
+        }}
+      />
     </WorkspaceShell>
   );
 }
