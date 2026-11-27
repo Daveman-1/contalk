@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 
-// Official Google reCAPTCHA v2 Test Key (works out of the box on localhost)
+// Official Google reCAPTCHA v2 Test Key (Google-approved, works on localhost without domain checks)
 const GOOGLE_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
 export default function GoogleRecaptcha({
@@ -16,9 +16,22 @@ export default function GoogleRecaptcha({
   const widgetIdRef = useRef(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [renderError, setRenderError] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
 
-  const siteKey =
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || GOOGLE_TEST_SITE_KEY;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host.endsWith('.local')) {
+        setIsLocalhost(true);
+      }
+    }
+  }, []);
+
+  // On localhost, default to the official Google Test Key to prevent "Localhost is not in the list of supported domains"
+  // On production (e.g. contalk.vercel.app), use the real live key from environment variables
+  const siteKey = isLocalhost
+    ? (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY_DEV || GOOGLE_TEST_SITE_KEY)
+    : (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || GOOGLE_TEST_SITE_KEY);
 
   // 1. Load the Google reCAPTCHA explicit script once
   useEffect(() => {
