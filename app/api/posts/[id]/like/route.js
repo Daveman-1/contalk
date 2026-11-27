@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
 import { togglePostLike } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
-    const { userId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    const session = getSessionFromRequest(request);
+    if (!session.active) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const post = await togglePostLike(id, String(userId));
+    const { id } = params;
+    const post = await togglePostLike(id, session.active.id);
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }

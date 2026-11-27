@@ -3,24 +3,34 @@ import {
   joinRandomQueue,
   leaveRandomChat,
   getRandomStatus,
+  getRandomRoomForUser,
   saveMessage,
   setTyping,
 } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
+import { checkContentSafety } from '@/lib/moderation';
 import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
 
+const NO_STORE = { 'Cache-Control': 'no-store, no-cache, must-revalidate' };
+
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    if (!userId) {
-      return NextResponse.json({ session: { status: 'idle' }, messages: [], isPartnerTyping: false, queueCounts: { male: 0, female: 0 } });
+    const session = getSessionFromRequest(request);
+    if (!session.active) {
+      return NextResponse.json(
+        {
+          session: { status: 'idle' },
+          messages: [],
+          isPartnerTyping: false,
+          queueCounts: { male: 0, female: 0 },
+        },
+        { headers: NO_STORE }
+      );
     }
-    const data = await getRandomStatus(userId);
-    return NextResponse.json(data, {
-      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
-    });
+    const data = await getRandomStatus(session.active.id);
+    return NextResponse.json(data, { headers: NO_STORE });
   } catch (err) {
     console.error('[api/random GET]', err);
     return NextResponse.json({ error: 'Failed to read random chat status' }, { status: 500 });
@@ -29,17 +39,22 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { action, userId } = body;
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    const session = getSessionFromRequest(request);
+    if (!session.active) {
+      return NextResponse.json({ error: 'Session required' }, { status: 401 });
     }
+
+    const body = await request.json();
+    const { action } = body;
+    const userId = session.active.id;
+    const userName = session.active.name;
+    const isAnon = session.active.isAnon;
 
     if (action === 'join') {
       const result = await joinRandomQueue({
-        userId: String(userId),
-        name: String(body.name || 'Stranger'),
-        isAnon: Boolean(body.isAnon),
+        userId,
+        name: userName,
+        isAnon,
         avatar: body.avatar || null,
         gender: body.gender,
         lookingFor: body.lookingFor,
@@ -50,46 +65,51 @@ export async function POST(request) {
     if (action === 'skip') {
       if (body.requeue) {
         const result = await joinRandomQueue({
-          userId: String(userId),
-          name: String(body.name || 'Stranger'),
-          isAnon: Boolean(body.isAnon),
+          userId,
+          name: userName,
+          isAnon,
           avatar: body.avatar || null,
           gender: body.gender,
           lookingFor: body.lookingFor,
         });
         return NextResponse.json(result);
       }
-      const result = await leaveRandomChat(String(userId));
+      const result = await leaveRandomChat(userId);
       return NextResponse.json(result);
     }
 
     if (action === 'leave') {
-      const result = await leaveRandomChat(String(userId));
+      const result = await leaveRandomChat(userId);
       return NextResponse.json(result);
     }
 
     if (action === 'message') {
-      const trimmed = String(body.content || '').trim();
-      if (!trimmed || !body.roomId) {
-        return NextResponse.json({ error: 'roomId and content required' }, { status: 400 });
+      const activeRoomId = await getRandomRoomForUser(userId);
+      if (!activeRoomId || (body.roomId && String(body.roomId) !== activeRoomId)) {
+        return NextResponse.json({ error: 'No active random chat session' }, { status: 403 });
+      }
+      const safety = checkContentSafety(body.content, { maxLength: 1000 });
+      if (!safety.ok) {
+        return NextResponse.json({ error: safety.reason }, { status: 400 });
       }
       const message = await saveMessage({
         id: uuidv4(),
-        room_id: String(body.roomId),
-        sender: String(body.sender || 'Stranger'),
-        sender_id: String(userId),
-        sender_avatar: body.senderAvatar || null,
-        content: trimmed,
+        room_id: activeRoomId,
+        sender: userName,
+        sender_id: userId,
+        sender_avatar: body.senderAvatar ? String(body.senderAvatar).slice(0, 24) : null,
+        content: String(body.content).trim(),
       });
       return NextResponse.json({ message }, { status: 201 });
     }
 
     if (action === 'typing') {
-      if (body.roomId) {
+      const activeRoomId = await getRandomRoomForUser(userId);
+      if (activeRoomId) {
         await setTyping({
-          roomId: String(body.roomId),
-          userId: String(userId),
-          userName: String(body.sender || 'Stranger'),
+          roomId: activeRoomId,
+          userId,
+          userName,
           isTyping: Boolean(body.isTyping),
         });
       }

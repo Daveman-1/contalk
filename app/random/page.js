@@ -6,8 +6,9 @@ import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
-import { Shuffle, UserMinus, ShieldCheck } from 'lucide-react';
+import { Shuffle, UserMinus, ShieldCheck, Flag, Ban } from 'lucide-react';
 import VerificationModal, { isSafetyVerified } from '@/components/VerificationModal';
+import ReportModal from '@/components/ReportModal';
 
 function GenderIcon({ gender, size = 15 }) {
   if (gender === 'female') {
@@ -39,15 +40,18 @@ const CATEGORIES = [
 ];
 
 export default function RandomChatPage() {
-  const { onlineUsers } = useNotifications();
+  const { onlineUsers, blockUser } = useNotifications();
   const [chatState, setChatState] = useState(STATES.IDLE);
   const [messages, setMessages] = useState([]);
+  const [sendError, setSendError] = useState('');
+  const [strangerId, setStrangerId] = useState(null);
   const [strangerName, setStrangerName] = useState('Stranger');
   const [strangerIsAnon, setStrangerIsAnon] = useState(true);
   const [strangerGender, setStrangerGender] = useState('male');
   const [strangerAvatar, setStrangerAvatar] = useState(null);
   const [isStrangerTyping, setIsStrangerTyping] = useState(false);
   const [queueCounts, setQueueCounts] = useState({ male: 0, female: 0 });
+  const [reportOpen, setReportOpen] = useState(false);
 
   const [myGender, setMyGender] = useState('male');
   const [lookingFor, setLookingFor] = useState('female');
@@ -99,6 +103,7 @@ export default function RandomChatPage() {
 
     if (session.status === 'matched' && session.roomId) {
       roomIdRef.current = session.roomId;
+      setStrangerId(session.partnerId || null);
       setStrangerName(session.stranger || 'Stranger');
       setStrangerIsAnon(session.strangerIsAnon !== false);
       setStrangerAvatar(session.strangerAvatar || null);
@@ -287,9 +292,15 @@ export default function RandomChatPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        setSendError('');
         if (data.message) {
           setMessages((prev) => prev.map((m) => (m.id === optimisticId ? data.message : m)));
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setSendError(errData.error || 'Message could not be sent.');
+        setTimeout(() => setSendError(''), 4000);
       }
     } catch {}
   };
@@ -354,6 +365,31 @@ export default function RandomChatPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                {strangerId && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setReportOpen(true)}
+                      className="btn-soft p-2 text-xs"
+                      title={`Report ${strangerName}`}
+                      aria-label={`Report ${strangerName}`}
+                    >
+                      <Flag size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await blockUser(strangerId, strangerName);
+                        handleStop();
+                      }}
+                      className="btn-danger-soft p-2 text-xs"
+                      title={`Block ${strangerName} and end chat`}
+                      aria-label={`Block ${strangerName}`}
+                    >
+                      <Ban size={14} />
+                    </button>
+                  </>
+                )}
                 <button onClick={handleSkip} className="btn-cta text-xs sm:text-sm py-1.5 sm:py-2 px-3 sm:px-4">
                   Skip →
                 </button>
@@ -375,6 +411,7 @@ export default function RandomChatPage() {
                 partnerName={strangerName}
                 partnerAvatar={strangerAvatar}
                 myId={myId}
+                errorBanner={sendError}
                 placeholder={`Message ${strangerName}`}
               />
             </div>
@@ -530,6 +567,15 @@ export default function RandomChatPage() {
           setShowVerificationModal(false);
           handleStart();
         }}
+      />
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetId={strangerId}
+        targetName={strangerName}
+        contextType="random"
+        contextId={roomIdRef.current}
+        onBlocked={() => handleStop()}
       />
     </WorkspaceShell>
   );

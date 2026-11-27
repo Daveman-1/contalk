@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { heartbeatPresence, removePresence, getOnlineState, getStorageInfo } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,18 +23,31 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const session = getSessionFromRequest(request);
+    const body = await request.json().catch(() => ({}));
+
     if (body?.action === 'leave') {
-      const state = await removePresence(body.id);
+      const targetId = body.id ? String(body.id) : session.active?.id;
+      // Only allow removing IDs belonging to the caller's verified session
+      if (targetId && session.allowedIds.has(targetId)) {
+        const state = await removePresence(targetId);
+        return NextResponse.json({ ...state, ...getStorageInfo() }, { headers: NO_STORE_HEADERS });
+      }
+      const state = await getOnlineState();
+      return NextResponse.json({ ...state, ...getStorageInfo() }, { headers: NO_STORE_HEADERS });
+    }
+
+    if (!session.active) {
+      const state = await getOnlineState();
       return NextResponse.json({ ...state, ...getStorageInfo() }, { headers: NO_STORE_HEADERS });
     }
 
     const state = await heartbeatPresence({
-      id: body.id,
-      name: body.name,
-      isAnon: body.isAnon,
-      avatar: body.avatar,
-      activeRoomId: body.activeRoomId || null,
+      id: session.active.id,
+      name: session.active.name,
+      isAnon: session.active.isAnon,
+      avatar: body.avatar ? String(body.avatar).slice(0, 24) : null,
+      activeRoomId: body.activeRoomId ? String(body.activeRoomId).slice(0, 64) : null,
     });
     return NextResponse.json({ ...state, ...getStorageInfo() }, { headers: NO_STORE_HEADERS });
   } catch (err) {

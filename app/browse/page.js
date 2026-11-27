@@ -5,15 +5,25 @@ import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserList from '@/components/UserList';
 import UserAvatar from '@/components/UserAvatar';
+import ReportModal from '@/components/ReportModal';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity, getDmRoomId } from '@/lib/identity';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Flag, Ban } from 'lucide-react';
 
 export default function BrowsePage() {
-  const { onlineUsers, unreadBySenderId, clearSenderUnread, setActiveDmPartnerId } = useNotifications();
+  const {
+    onlineUsers,
+    unreadBySenderId,
+    clearSenderUnread,
+    setActiveDmPartnerId,
+    blockedUserIds,
+    blockUser,
+  } = useNotifications();
   const [activeUserId, setActiveUserId] = useState(null);
   const [activeUserSnapshot, setActiveUserSnapshot] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [sendError, setSendError] = useState('');
+  const [reportTarget, setReportTarget] = useState(null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -39,11 +49,11 @@ export default function BrowsePage() {
     };
   }, []);
 
-  // Only show people who are currently online (both anonymous visitors & registered accounts)
+  // Only show people who are currently online and not blocked (both anonymous visitors & registered accounts)
   const onlineDirectory = useMemo(() => {
     const byId = new Map();
     for (const u of onlineUsers) {
-      if (!u || !u.id) continue;
+      if (!u || !u.id || blockedUserIds.has(u.id)) continue;
       byId.set(u.id, {
         id: u.id,
         name: u.name,
@@ -53,7 +63,7 @@ export default function BrowsePage() {
       });
     }
     return Array.from(byId.values());
-  }, [onlineUsers]);
+  }, [onlineUsers, blockedUserIds]);
 
   const activeUser = useMemo(() => {
     if (!activeUserId) return null;
@@ -162,11 +172,17 @@ export default function BrowsePage() {
       });
       if (res.ok) {
         const data = await res.json();
+        setSendError('');
         if (data.message) {
           setMessages((prev) =>
             prev.map((m) => (m.id === optimisticId ? data.message : m))
           );
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setSendError(errData.error || 'Message could not be sent.');
+        setTimeout(() => setSendError(''), 4000);
       }
     } catch (err) {
       console.error('Failed to send DM:', err);
@@ -259,6 +275,40 @@ export default function BrowsePage() {
                     </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReportTarget({
+                        id: activeUser.id,
+                        name: activeUser.name,
+                        contextId: getDmRoomId(myId, activeUser.id),
+                      })
+                    }
+                    className="btn-soft p-2 text-xs inline-flex items-center gap-1"
+                    title={`Report ${activeUser.name}`}
+                    aria-label={`Report ${activeUser.name}`}
+                  >
+                    <Flag size={14} />
+                    <span className="hidden sm:inline">Report</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await blockUser(activeUser.id, activeUser.name);
+                      if (ok) {
+                        setActiveUserId(null);
+                        setActiveUserSnapshot(null);
+                      }
+                    }}
+                    className="btn-danger-soft p-2 text-xs inline-flex items-center gap-1"
+                    title={`Block ${activeUser.name}`}
+                    aria-label={`Block ${activeUser.name}`}
+                  >
+                    <Ban size={14} />
+                    <span className="hidden sm:inline">Block</span>
+                  </button>
+                </div>
               </div>
 
               <div
@@ -278,6 +328,8 @@ export default function BrowsePage() {
                     partnerName={activeUser.name}
                     partnerAvatar={activeUser.avatar}
                     myId={myId}
+                    blockedIds={blockedUserIds}
+                    errorBanner={sendError}
                     placeholder={`Message ${activeUser.name}`}
                   />
                 )}
@@ -304,6 +356,18 @@ export default function BrowsePage() {
           )}
         </div>
       </div>
+      <ReportModal
+        isOpen={Boolean(reportTarget)}
+        onClose={() => setReportTarget(null)}
+        targetId={reportTarget?.id}
+        targetName={reportTarget?.name}
+        contextType="dm"
+        contextId={reportTarget?.contextId}
+        onBlocked={() => {
+          setActiveUserId(null);
+          setActiveUserSnapshot(null);
+        }}
+      />
     </WorkspaceShell>
   );
 }

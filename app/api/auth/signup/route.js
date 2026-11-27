@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findUserByUsername, createUser } from '@/lib/db';
-import { signToken } from '@/lib/auth';
+import { signToken, attachAuthCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -41,9 +41,14 @@ export async function POST(request) {
     const id = uuidv4();
 
     const user = await createUser({ id, username: sanitized, password_hash });
-    const token = signToken({ id: user.id, username: user.username });
+    const token = signToken({ id: user.id, username: user.username, kind: 'account' });
 
-    return NextResponse.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar || null } }, { status: 201 });
+    const res = NextResponse.json(
+      { token, user: { id: user.id, username: user.username, avatar: user.avatar || null } },
+      { status: 201 }
+    );
+    attachAuthCookie(res, token);
+    return res;
   } catch (err) {
     console.error('[signup]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

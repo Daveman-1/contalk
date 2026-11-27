@@ -13,6 +13,9 @@ const NotificationContext = createContext({
   unreadBySenderId: {},
   onlineUsers: [],
   roomPresence: {},
+  blockedUsers: [],
+  blockedUserIds: new Set(),
+  sessionReady: false,
   storageMode: 'local',
   soundEnabled: true,
   browserPermission: 'default',
@@ -25,6 +28,9 @@ const NotificationContext = createContext({
   setActiveDmPartnerId: () => {},
   setActiveRoomId: () => {},
   refreshPresence: async () => {},
+  refreshBlocked: async () => {},
+  blockUser: async () => {},
+  unblockUser: async () => {},
 });
 
 function playChime() {
@@ -59,9 +65,17 @@ export function NotificationProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [roomPresence, setRoomPresence] = useState({});
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [sessionReady, setSessionReady] = useState(false);
   const [storageMode, setStorageMode] = useState('local');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [browserPermission, setBrowserPermission] = useState('default');
+
+  const blockedIdsRef = useRef(new Set());
+  const blockedUserIds = new Set(blockedUsers.map((b) => b.id));
+  useEffect(() => {
+    blockedIdsRef.current = new Set(blockedUsers.map((b) => b.id));
+  }, [blockedUsers]);
 
   const activeDmPartnerIdRef = useRef(null);
   const activeRoomIdRef = useRef(null);
@@ -201,6 +215,87 @@ export function NotificationProvider({ children }) {
     } catch {}
   }, [sendLeavePresence]);
 
+  const bootstrapSession = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const preferredAnonId = localStorage.getItem('ct_anon_id') || undefined;
+      const preferredAnonName = localStorage.getItem('ct_anon_name') || undefined;
+      const token = localStorage.getItem('ct_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch('/api/session', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ preferredAnonId, preferredAnonName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.anon?.id) {
+          localStorage.setItem('ct_anon_id', data.anon.id);
+          localStorage.setItem('ct_anon_name', data.anon.name || 'Anon');
+        }
+        if (data?.account?.id) {
+          const prevUser = localStorage.getItem('ct_user');
+          if (!prevUser) {
+            localStorage.setItem(
+              'ct_user',
+              JSON.stringify({
+                id: data.account.id,
+                username: data.account.name,
+                avatar: data.account.avatar || null,
+              })
+            );
+          }
+        }
+        setSessionReady(true);
+      }
+    } catch {}
+  }, []);
+
+  const refreshBlocked = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const res = await fetch('/api/safety/block', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.blocked)) setBlockedUsers(data.blocked);
+    } catch {}
+  }, []);
+
+  const blockUserAction = useCallback(async (targetId, targetName = 'User') => {
+    if (!targetId) return false;
+    try {
+      const res = await fetch('/api/safety/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId, targetName }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (Array.isArray(data.blocked)) setBlockedUsers(data.blocked);
+      setNotifications((prev) => prev.filter((n) => n.senderId !== targetId));
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const unblockUserAction = useCallback(async (targetId) => {
+    if (!targetId) return false;
+    try {
+      const res = await fetch(`/api/safety/block?targetId=${encodeURIComponent(targetId)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (Array.isArray(data.blocked)) setBlockedUsers(data.blocked);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Poll DM Inbox for Real-Time Notifications
   const pollInbox = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -208,7 +303,7 @@ export function NotificationProvider({ children }) {
     if (!identity.id) return;
 
     try {
-      const res = await fetch(`/api/inbox?userId=${encodeURIComponent(identity.id)}`, { cache: 'no-store' });
+      const res = await fetch('/api/inbox', { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
       const events = Array.isArray(data.events) ? data.events : [];
@@ -228,6 +323,7 @@ export function NotificationProvider({ children }) {
       for (const msg of fresh) {
         seenInboxIdsRef.current.add(msg.id);
         if (msg.senderId === identity.id) continue;
+        if (blockedIdsRef.current.has(msg.senderId)) continue;
 
         const viewingSameDm =
           pathnameRef.current === '/browse' &&
@@ -252,8 +348,14 @@ export function NotificationProvider({ children }) {
   }, [pushNotification]);
 
   useEffect(() => {
-    sendHeartbeat();
-    pollInbox();
+    let active = true;
+    (async () => {
+      await bootstrapSession();
+      if (!active) return;
+      sendHeartbeat();
+      pollInbox();
+      refreshBlocked();
+    })();
 
     const presenceTimer = setInterval(() => {
       if (!document.hidden) sendHeartbeat();
@@ -270,11 +372,13 @@ export function NotificationProvider({ children }) {
       }
     };
 
-    const onAuthChange = () => {
+    const onAuthChange = async () => {
       seenInboxIdsRef.current = new Set();
       inboxInitializedRef.current = false;
+      await bootstrapSession();
       sendHeartbeat();
       pollInbox();
+      refreshBlocked();
     };
 
     const onPageExit = () => {
@@ -288,6 +392,7 @@ export function NotificationProvider({ children }) {
     window.addEventListener('beforeunload', onPageExit);
 
     return () => {
+      active = false;
       clearInterval(presenceTimer);
       clearInterval(inboxTimer);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -295,7 +400,7 @@ export function NotificationProvider({ children }) {
       window.removeEventListener('pagehide', onPageExit);
       window.removeEventListener('beforeunload', onPageExit);
     };
-  }, [sendHeartbeat, sendLeavePresence, pollInbox]);
+  }, [bootstrapSession, sendHeartbeat, sendLeavePresence, pollInbox, refreshBlocked]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
@@ -359,6 +464,9 @@ export function NotificationProvider({ children }) {
         unreadBySenderId,
         onlineUsers,
         roomPresence,
+        blockedUsers,
+        blockedUserIds,
+        sessionReady,
         storageMode,
         soundEnabled,
         browserPermission,
@@ -371,6 +479,9 @@ export function NotificationProvider({ children }) {
         setActiveDmPartnerId,
         setActiveRoomId,
         refreshPresence: sendHeartbeat,
+        refreshBlocked,
+        blockUser: blockUserAction,
+        unblockUser: unblockUserAction,
       }}
     >
       {children}

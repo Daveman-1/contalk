@@ -5,17 +5,20 @@ import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
 import RoomIcon, { ROOM_ICON_KEYS } from '@/components/RoomIcon';
-import { MessageSquare, X } from 'lucide-react';
+import ReportModal from '@/components/ReportModal';
+import { MessageSquare, X, Flag, Ban } from 'lucide-react';
 import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
 
 const ROOM_ICONS = ROOM_ICON_KEYS;
 
 export default function RoomsPage() {
-  const { roomPresence, setActiveRoomId: reportActiveRoom } = useNotifications();
+  const { roomPresence, setActiveRoomId: reportActiveRoom, blockedUserIds, blockUser } = useNotifications();
   const [rooms, setRooms] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [sendError, setSendError] = useState('');
+  const [reportTarget, setReportTarget] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -154,9 +157,15 @@ export default function RoomsPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        setSendError('');
         if (data.message) {
           setMessages((prev) => prev.map((m) => (m.id === optimisticId ? data.message : m)));
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setSendError(errData.error || 'Message could not be sent.');
+        setTimeout(() => setSendError(''), 4000);
       }
     } catch (err) {
       console.error('Failed to send room message:', err);
@@ -380,16 +389,46 @@ export default function RoomsPage() {
                   {activeMembers.length === 0 ? (
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Just you</span>
                   ) : (
-                    activeMembers.map((m) => (
-                      <span
-                        key={m.id}
-                        className="inline-flex items-center gap-1.5 text-xs pl-1 pr-2.5 py-0.5 rounded-full"
-                        style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
-                      >
-                        <UserAvatar avatar={m.avatar} seed={m.id} name={m.name} size={20} />
-                        {m.name}
-                      </span>
-                    ))
+                    activeMembers.map((m) => {
+                      const isOther = m.id !== myId;
+                      const isBlocked = blockedUserIds.has(m.id);
+                      return (
+                        <span
+                          key={m.id}
+                          className="inline-flex items-center gap-1.5 text-xs pl-1 pr-2 py-0.5 rounded-full"
+                          style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+                        >
+                          <UserAvatar avatar={m.avatar} seed={m.id} name={m.name} size={20} />
+                          <span className={isBlocked ? 'line-through opacity-50' : ''}>{m.name}</span>
+                          {isOther && !isBlocked && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReportTarget({ id: m.id, name: m.name, contextId: activeRoom.id })
+                                }
+                                className="p-0.5 rounded hover:text-amber-400"
+                                style={{ color: 'var(--text-muted)' }}
+                                title={`Report ${m.name}`}
+                                aria-label={`Report ${m.name}`}
+                              >
+                                <Flag size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => blockUser(m.id, m.name)}
+                                className="p-0.5 rounded hover:text-rose-400"
+                                style={{ color: 'var(--text-muted)' }}
+                                title={`Block ${m.name}`}
+                                aria-label={`Block ${m.name}`}
+                              >
+                                <Ban size={11} />
+                              </button>
+                            </>
+                          )}
+                        </span>
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -410,6 +449,8 @@ export default function RoomsPage() {
                     isPartnerTyping={typingUsers.length > 0}
                     partnerName={typingLabel}
                     myId={myId}
+                    blockedIds={blockedUserIds}
+                    errorBanner={sendError}
                     placeholder={`Message #${activeRoom.slug}`}
                   />
                 )}
@@ -516,6 +557,14 @@ export default function RoomsPage() {
           </div>
         </div>
       )}
+      <ReportModal
+        isOpen={Boolean(reportTarget)}
+        onClose={() => setReportTarget(null)}
+        targetId={reportTarget?.id}
+        targetName={reportTarget?.name}
+        contextType="room"
+        contextId={reportTarget?.contextId}
+      />
     </WorkspaceShell>
   );
 }

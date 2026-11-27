@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server';
 import { updateUserAvatar } from '@/lib/db';
 import { isValidAvatarId } from '@/lib/avatars';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
-    const { userId, avatar } = await request.json();
-    if (!userId || !isValidAvatarId(avatar)) {
-      return NextResponse.json({ error: 'Valid userId and avatar are required' }, { status: 400 });
+    const session = getSessionFromRequest(request);
+    if (!session.account) {
+      return NextResponse.json({ error: 'Account sign-in required' }, { status: 401 });
     }
-    const updated = await updateUserAvatar(String(userId), avatar);
+
+    const { avatar } = await request.json();
+    if (!isValidAvatarId(avatar)) {
+      return NextResponse.json({ error: 'Valid avatar is required' }, { status: 400 });
+    }
+    const updated = await updateUserAvatar(session.account.id, avatar);
     if (!updated) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

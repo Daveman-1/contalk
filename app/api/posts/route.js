@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts, createPost } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
+import { checkContentSafety } from '@/lib/moderation';
 import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
@@ -16,26 +18,27 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { authorId, authorName, authorAvatar, isAnon, content } = await request.json();
-    const trimmed = String(content || '').trim();
+    const session = getSessionFromRequest(request);
+    if (!session.active) {
+      return NextResponse.json({ error: 'Session required' }, { status: 401 });
+    }
 
-    if (!trimmed) {
-      return NextResponse.json({ error: 'Post cannot be empty' }, { status: 400 });
+    const { authorAvatar, isAnon, content } = await request.json();
+    const safety = checkContentSafety(content, { maxLength: 500 });
+    if (!safety.ok) {
+      return NextResponse.json({ error: safety.reason }, { status: 400 });
     }
-    if (trimmed.length > 500) {
-      return NextResponse.json({ error: 'Post cannot exceed 500 characters' }, { status: 400 });
-    }
-    if (!authorId || !authorName) {
-      return NextResponse.json({ error: 'Author identity is required' }, { status: 400 });
-    }
+
+    // Preserve signed-in users' "Post anonymously" toggle using their verified anon token
+    const effective = Boolean(isAnon) && session.anon ? session.anon : session.active;
 
     const post = await createPost({
       id: uuidv4(),
-      author_id: String(authorId),
-      author_name: String(authorName).slice(0, 32),
+      author_id: effective.id,
+      author_name: String(effective.name).slice(0, 32),
       author_avatar: authorAvatar ? String(authorAvatar).slice(0, 24) : null,
-      is_anon: Boolean(isAnon),
-      content: trimmed,
+      is_anon: effective.isAnon,
+      content: String(content).trim(),
     });
 
     return NextResponse.json({ post }, { status: 201 });

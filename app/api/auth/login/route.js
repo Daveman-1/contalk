@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findUserByUsername } from '@/lib/db';
-import { signToken } from '@/lib/auth';
+import { signToken, attachAuthCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
@@ -23,12 +23,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }
 
-    const token = signToken({ id: user.id, username: user.username });
+    const token = signToken({ id: user.id, username: user.username, kind: 'account' });
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       token,
       user: { id: user.id, username: user.username, avatar: user.avatar || null },
     });
+    attachAuthCookie(res, token);
+    return res;
   } catch (err) {
     console.error('[login]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

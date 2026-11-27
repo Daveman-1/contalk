@@ -9,9 +9,10 @@ import ConTalkLogo from '@/components/ConTalkLogo';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import UserAvatar from '@/components/UserAvatar';
 import AvatarPickerModal from '@/components/AvatarPickerModal';
+import { useNotifications } from '@/components/NotificationProvider';
 import { SunIcon, MoonIcon } from '@/components/ThemeIcon';
 import RoomIcon from '@/components/RoomIcon';
-import { X } from 'lucide-react';
+import { X, ShieldBan } from 'lucide-react';
 import { getIdentity } from '@/lib/identity';
 
 const PINNED_ROOMS = [
@@ -81,10 +82,12 @@ export default function WorkspaceShell({
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const { blockedUsers, unblockUser } = useNotifications();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
   const [identity, setIdentity] = useState({ id: '', name: 'Anon', isAnon: true, avatar: 'cloud' });
   const [vpStyle, setVpStyle] = useState(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -146,6 +149,7 @@ export default function WorkspaceShell({
   }, [onSearchChange]);
 
   const handleLogout = () => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     localStorage.removeItem('ct_token');
     localStorage.removeItem('ct_user');
     window.dispatchEvent(new Event('auth_change'));
@@ -247,8 +251,28 @@ export default function WorkspaceShell({
         </div>
       </div>
 
-      {/* Bottom Theme Toggle + Identity Card */}
+      {/* Bottom Theme Toggle + Blocked Manager + Identity Card */}
       <div className="p-3 space-y-2.5 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+        {blockedUsers.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setBlockedModalOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+            style={{
+              background: 'rgba(244, 63, 94, 0.1)',
+              color: '#F43F5E',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
+            }}
+            title="Manage blocked users"
+          >
+            <span className="flex items-center gap-2">
+              <ShieldBan size={15} />
+              {!collapsed && <span>Blocked Users</span>}
+            </span>
+            {!collapsed && <span className="font-bold">{blockedUsers.length}</span>}
+          </button>
+        )}
+
         {/* Theme Switcher */}
         <button
           onClick={toggleTheme}
@@ -498,6 +522,53 @@ export default function WorkspaceShell({
           onClose={() => setAvatarModalOpen(false)}
           onSaved={() => setIdentity(getIdentity())}
         />
+      )}
+      {blockedModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/65 backdrop-blur-sm p-4">
+          <div className="surface-card rounded-2xl p-5 w-full max-w-sm border shadow-2xl animate-fadeIn">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <ShieldBan size={17} className="text-rose-400" />
+                <span>Blocked Users ({blockedUsers.length})</span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setBlockedModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-muted)' }}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            {blockedUsers.length === 0 ? (
+              <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>
+                No blocked users.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {blockedUsers.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl"
+                    style={{ background: 'var(--bg-elevated)' }}
+                  >
+                    <span className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {u.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => unblockUser(u.id)}
+                      className="btn-soft px-2.5 py-1 text-[11px] flex-shrink-0"
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

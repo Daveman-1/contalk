@@ -4,7 +4,7 @@ import { useTheme } from '@/components/ThemeProvider';
 
 export default function ConTalkLogo({
   variant = 'full',
-  size = 42,
+  size = 160,
   showTagline = false,
   cutoutColor,
   className = '',
@@ -12,7 +12,10 @@ export default function ConTalkLogo({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Mark only (clean modern geometric speech bubble C-mark)
+  const conFill = isDark ? '#8C7BFF' : '#5B4AE3';
+  const talkFill = isDark ? '#2EE6C5' : '#12B89A';
+  const cutout = cutoutColor || (isDark ? '#0C0D18' : '#FFFFFF');
+
   if (variant === 'mark') {
     return (
       <svg
@@ -21,143 +24,86 @@ export default function ConTalkLogo({
         viewBox="0 0 64 64"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={`flex-shrink-0 select-none ${className}`}
+        className={className}
         aria-label="ConTalk logo"
       >
-        <defs>
-          <linearGradient id="ct_mark_primary" x1="6" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#8C7BFF" />
-            <stop offset="45%" stopColor="#6366F1" />
-            <stop offset="100%" stopColor="#4F46E5" />
-          </linearGradient>
-          <linearGradient id="ct_mark_accent" x1="18" y1="18" x2="58" y2="58" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#2EE6C5" />
-            <stop offset="55%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-          <filter id="ct_mark_glow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#6366F1" floodOpacity={isDark ? '0.45' : '0.2'} />
-          </filter>
-        </defs>
-
-        {/* Ambient back aura */}
-        <circle cx="32" cy="32" r="28" fill="#6366F1" fillOpacity={isDark ? '0.12' : '0.06'} />
-
-        {/* Secondary dialogue node (Cyan/Mint) */}
+        {/* Back-right Talk cloud */}
         <path
-          d="M26 14C37.0457 14 46 22.9543 46 34C46 38.2 44.7 42.1 42.5 45.3L46 54L37.2 50.8C34.2 52.8 30.2 54 26 54C14.9543 54 6 45.0457 6 34C6 22.9543 14.9543 14 26 14Z"
-          fill="url(#ct_mark_accent)"
-          fillOpacity={isDark ? '0.88' : '0.92'}
+          d="M27.5 18.5C27.5 13.8 31.3 10.5 36 10.5C38.4 10.5 40.5 11.4 42 12.8C43.5 11.7 45.4 11.2 47.4 11.5C51.4 12.1 54.3 15.6 54 19.6C56.6 21 58.2 23.7 57.8 26.8C57.3 30.7 53.9 33.4 50 33.4H48.6C47.3 35.6 44.8 37 42 37C39.6 37 37.5 35.9 36.1 34.2C34.8 35.2 33.2 35.7 31.4 35.5C27.5 35 24.8 31.5 25.4 27.6C24.2 25.9 23.8 23.8 24.4 21.8C25 20 26.1 19 27.5 18.5Z"
+          fill={talkFill}
         />
+        {/* Talk thought dots */}
+        <circle cx="52.5" cy="40.5" r="2.7" fill={talkFill} />
+        <circle cx="56.5" cy="45.5" r="1.6" fill={talkFill} />
 
-        {/* Primary dialogue vessel (Electric Indigo/Violet) */}
+        {/* Front-left Con cloud with clean cutout */}
         <path
-          d="M38 10C49.0457 10 58 18.9543 58 30C58 35.2 56 39.9 52.7 43.4L55 52L45.4 48.4C42 50.7 37.7 52 33 52C21.9543 52 13 43.0457 13 32C13 20.9543 21.9543 10 33 10H38Z"
-          fill="url(#ct_mark_primary)"
-          filter="url(#ct_mark_glow)"
-          stroke={cutoutColor || (isDark ? '#0C0D18' : '#FFFFFF')}
-          strokeWidth="3.2"
-          strokeLinejoin="round"
+          d="M11 33.5C11 29.1 14.5 25.8 18.9 25.8C20.9 25.8 22.8 26.5 24.2 27.8C25.9 26.2 28.4 25.5 30.9 26.1C34.4 27 36.8 30.1 36.7 33.6C39.5 34.8 41.3 37.6 40.9 40.8C40.4 44.6 37.1 47.4 33.2 47.4H31.8C30.4 49.5 28 50.8 25.3 50.8C23 50.8 20.9 49.7 19.5 48.1C18.1 49.1 16.3 49.5 14.5 49.2C10.6 48.5 8 44.9 8.7 41C7.6 39.4 7.3 37.3 8 35.4C8.5 34.2 9.6 33.7 11 33.5Z"
+          fill={conFill}
+          stroke={cutout}
+          strokeWidth="2.8"
           paintOrder="stroke"
+          strokeLinejoin="round"
         />
+        {/* Con thought dots */}
+        <circle cx="11.5" cy="54.2" r="2.7" fill={conFill} />
+        <circle cx="7.4" cy="58.6" r="1.6" fill={conFill} />
 
-        {/* Modern dialogue wave cutout */}
-        <circle cx="28" cy="30" r="3.2" fill="#FFFFFF" fillOpacity="0.95" />
-        <circle cx="36" cy="30" r="3.2" fill="#FFFFFF" fillOpacity="0.95" />
-        <circle cx="44" cy="30" r="3.2" fill="#2EE6C5" />
+        {/* 3 chat dots inside front cloud */}
+        <circle cx="18.1" cy="38.3" r="2.3" fill="#FFFFFF" fillOpacity="0.95" />
+        <circle cx="24.3" cy="38.3" r="2.3" fill="#FFFFFF" fillOpacity="0.95" />
+        <circle cx="30.5" cy="38.3" r="2.3" fill="#2EE6C5" />
       </svg>
     );
   }
 
-  // Full / Horizontal Brand Identity (Icon Mark + Typography + Tagline)
-  const markSize = Math.max(34, Math.min(54, Math.round(size * 0.35)));
+  const height = Math.round(size * 0.54);
 
   return (
     <div className={`inline-flex flex-col items-center select-none ${className}`}>
-      <div className="flex items-center gap-3">
-        {/* Vector Mark */}
-        <div className="relative flex-shrink-0 transition-transform duration-200 hover:scale-105">
-          <svg
-            width={markSize}
-            height={markSize}
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="ct_full_p" x1="6" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#8C7BFF" />
-                <stop offset="50%" stopColor="#6366F1" />
-                <stop offset="100%" stopColor="#4F46E5" />
-              </linearGradient>
-              <linearGradient id="ct_full_m" x1="18" y1="18" x2="58" y2="58" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#2EE6C5" />
-                <stop offset="60%" stopColor="#10B981" />
-                <stop offset="100%" stopColor="#059669" />
-              </linearGradient>
-            </defs>
+      <svg
+        width={size}
+        height={height}
+        viewBox="0 0 280 152"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="ConTalk"
+      >
+        {/* Back-right thought cloud */}
+        <path
+          d="M123 36C123 22 135 12 149 12C156 12 162.5 14.8 167 19.2C172 14 179.4 11 187.5 11.5C201 12.4 211 23.2 210.5 36.2C222 39.2 230.5 49.8 229.5 62.5C228.4 76.2 217 86.5 203.2 86.5H197.5C192.5 94.5 183.4 99.8 173 99.8C164.2 99.8 156.4 95.8 151.4 89.5C146.5 93.2 140 94.8 133.2 93.8C119.5 91.6 110.2 79 112.4 65.4C108.5 60 107.2 52.8 109.4 46.2C111.5 40 116.5 36.8 123 36Z"
+          fill={talkFill}
+        />
+        {/* Back cloud trailing dots */}
+        <circle cx="215" cy="108" r="6.5" fill={talkFill} />
+        <circle cx="228" cy="122" r="3.8" fill={talkFill} />
 
-            {/* Back Mint Bubble */}
-            <path
-              d="M26 14C37.0457 14 46 22.9543 46 34C46 38.2 44.7 42.1 42.5 45.3L46 54L37.2 50.8C34.2 52.8 30.2 54 26 54C14.9543 54 6 45.0457 6 34C6 22.9543 14.9543 14 26 14Z"
-              fill="url(#ct_full_m)"
-              fillOpacity={isDark ? '0.9' : '0.95'}
-            />
+        {/* Front-left thought cloud with cutout stroke */}
+        <path
+          d="M49 69C49 55.5 60.5 45.5 74.5 45.5C81.2 45.5 87.2 48 91.6 52.2C96.8 47.2 104.2 44.5 112.2 45.2C125 46.4 134.8 56.8 134.4 69.5C145.2 72.5 153 82.8 152 95C150.9 108.2 139.8 118 126.5 118H121C116 125.8 107.2 130.8 97 130.8C88.5 130.8 81 127 76.2 121C71.4 124.4 65 126 58.4 124.8C45.2 122.4 36.4 110 38.6 96.8C34.8 91.6 33.6 84.6 35.8 78.2C37.8 72.4 42.8 69.5 49 69Z"
+          fill={conFill}
+          stroke={cutout}
+          strokeWidth="6.5"
+          paintOrder="stroke"
+          strokeLinejoin="round"
+        />
+        {/* Front cloud trailing dots */}
+        <circle cx="48" cy="136" r="6.5" fill={conFill} />
+        <circle cx="35" cy="147" r="3.8" fill={conFill} />
 
-            {/* Front Indigo Bubble */}
-            <path
-              d="M38 10C49.0457 10 58 18.9543 58 30C58 35.2 56 39.9 52.7 43.4L55 52L45.4 48.4C42 50.7 37.7 52 33 52C21.9543 52 13 43.0457 13 32C13 20.9543 21.9543 10 33 10H38Z"
-              fill="url(#ct_full_p)"
-              stroke={isDark ? '#0C0D18' : '#FFFFFF'}
-              strokeWidth="3.2"
-              strokeLinejoin="round"
-              paintOrder="stroke"
-            />
-
-            {/* Pulsing Voice Dots */}
-            <circle cx="28" cy="30" r="3.2" fill="#FFFFFF" fillOpacity="0.95" />
-            <circle cx="36" cy="30" r="3.2" fill="#FFFFFF" fillOpacity="0.95" />
-            <circle cx="44" cy="30" r="3.2" fill="#2EE6C5" />
-          </svg>
-        </div>
-
-        {/* Typographic Wordmark */}
-        <div className="flex flex-col">
-          <div className="flex items-center tracking-tight leading-none">
-            <span
-              className="font-extrabold text-2xl sm:text-3xl"
-              style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em' }}
-            >
-              Con
-            </span>
-            <span
-              className="font-extrabold text-2xl sm:text-3xl bg-gradient-to-r from-[#8C7BFF] via-[#7565F2] to-[#2EE6C5] bg-clip-text text-transparent"
-              style={{ letterSpacing: '-0.03em' }}
-            >
-              Talk
-            </span>
-            <span
-              className="inline-block w-2 h-2 rounded-full ml-1.5"
-              style={{
-                background: '#2EE6C5',
-                boxShadow: '0 0 8px rgba(46, 230, 197, 0.8)',
-              }}
-            />
-          </div>
-        </div>
-      </div>
+        {/* 3 chat dots replacing "Con Talk" */}
+        <circle cx="74" cy="88" r="7.2" fill="#FFFFFF" fillOpacity="0.95" />
+        <circle cx="93.5" cy="88" r="7.2" fill="#FFFFFF" fillOpacity="0.95" />
+        <circle cx="113" cy="88" r="7.2" fill="#2EE6C5" />
+      </svg>
 
       {showTagline && (
-        <div className="flex items-center gap-2 mt-2 px-3 py-0.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
-          <span className="online-dot" style={{ width: 6, height: 6 }} />
-          <span
-            className="text-[11px] font-medium tracking-wide uppercase"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            Real-Time · Anonymous · Public
-          </span>
-        </div>
+        <span
+          className="mt-2 text-xs sm:text-sm font-mono tracking-wide"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Say it. Stay anonymous.
+        </span>
       )}
     </div>
   );

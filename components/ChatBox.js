@@ -17,6 +17,8 @@ export default function ChatBox({
   placeholder = 'Message...',
   myId,
   disabled = false,
+  blockedIds = null,
+  errorBanner = '',
 }) {
   const [input, setInput] = useState('');
   const [openDrawer, setOpenDrawer] = useState(null); // null | 'stickers' | 'gifs'
@@ -120,7 +122,10 @@ export default function ChatBox({
     }
   };
 
-  const groupedMessages = groupMessages(messages);
+  const filteredMessages = blockedIds && blockedIds.size > 0
+    ? messages.filter((m) => !blockedIds.has(m.senderId))
+    : messages;
+  const groupedMessages = groupMessages(filteredMessages);
   const todayLabel = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
@@ -258,6 +263,11 @@ export default function ChatBox({
           paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom, 0px))',
         }}
       >
+        {errorBanner && (
+          <div className="mb-2 px-3 py-1.5 rounded-xl text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20">
+            {errorBanner}
+          </div>
+        )}
         <div
           ref={pickerWrapperRef}
           className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-2xl border relative"

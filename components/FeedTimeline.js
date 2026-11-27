@@ -3,8 +3,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import UserAvatar from '@/components/UserAvatar';
+import ReportModal from '@/components/ReportModal';
+import { useNotifications } from '@/components/NotificationProvider';
 import { getIdentity } from '@/lib/identity';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Flag, Ban } from 'lucide-react';
 
 const FEED_TABS = [
   { id: 'latest', label: 'Latest' },
@@ -47,12 +49,14 @@ export default function FeedTimeline({
   showInlineSearch = true,
   extraSidebarContent = null,
 }) {
+  const { blockedUserIds, blockUser } = useNotifications();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [postAnonymously, setPostAnonymously] = useState(false);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
+  const [reportTarget, setReportTarget] = useState(null);
 
   const [tab, setTab] = useState('latest');
   const [localSearch, setLocalSearch] = useState('');
@@ -244,6 +248,7 @@ export default function FeedTimeline({
 
   const visiblePosts = useMemo(() => {
     const list = posts
+      .filter((p) => !blockedUserIds.has(p.author_id))
       .filter((p) => {
         if (tab === 'accounts') return !p.is_anon;
         if (tab === 'anon') return p.is_anon;
@@ -267,7 +272,7 @@ export default function FeedTimeline({
       );
     }
     return list;
-  }, [posts, tab, activeTag, effectiveSearch]);
+  }, [posts, blockedUserIds, tab, activeTag, effectiveSearch]);
 
   const renderContentWithTags = (text) => {
     const parts = String(text || '').split(/(#[a-zA-Z0-9_]{2,30})/g);
@@ -493,14 +498,42 @@ export default function FeedTimeline({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       {!isMine && (
-                        <Link
-                          href={`/browse?chatWith=${encodeURIComponent(post.author_id)}`}
-                          className="btn-soft text-xs px-2.5 py-1"
-                        >
-                          DM
-                        </Link>
+                        <>
+                          <Link
+                            href={`/browse?chatWith=${encodeURIComponent(post.author_id)}`}
+                            className="btn-soft text-xs px-2.5 py-1"
+                          >
+                            DM
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setReportTarget({
+                                id: post.author_id,
+                                name: post.author_name,
+                                contextId: post.id,
+                              })
+                            }
+                            className="p-1.5 rounded-lg transition-colors hover:text-amber-400"
+                            style={{ color: 'var(--text-muted)' }}
+                            title={`Report ${post.author_name}`}
+                            aria-label={`Report ${post.author_name}`}
+                          >
+                            <Flag size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => blockUser(post.author_id, post.author_name)}
+                            className="p-1.5 rounded-lg transition-colors hover:text-rose-400"
+                            style={{ color: 'var(--text-muted)' }}
+                            title={`Block ${post.author_name}`}
+                            aria-label={`Block ${post.author_name}`}
+                          >
+                            <Ban size={13} />
+                          </button>
+                        </>
                       )}
                       {isMine && (
                         <button
@@ -553,7 +586,9 @@ export default function FeedTimeline({
                     <div className="mt-4 pt-3 border-t space-y-3 animate-fadeIn" style={{ borderColor: 'var(--border-subtle)' }}>
                       {(post.replies || []).length > 0 && (
                         <div className="space-y-2 pl-3 border-l-2" style={{ borderColor: 'var(--border-strong)' }}>
-                          {post.replies.map((reply) => (
+                          {post.replies
+                            .filter((reply) => !blockedUserIds.has(reply.author_id))
+                            .map((reply) => (
                             <div key={reply.id} className="rounded-xl px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'var(--bg-elevated)' }}>
                               <UserAvatar
                                 avatar={reply.author_avatar}
@@ -647,6 +682,15 @@ export default function FeedTimeline({
           )}
         </div>
       </aside>
+
+      <ReportModal
+        isOpen={Boolean(reportTarget)}
+        onClose={() => setReportTarget(null)}
+        targetId={reportTarget?.id}
+        targetName={reportTarget?.name}
+        contextType="post"
+        contextId={reportTarget?.contextId}
+      />
     </div>
   );
 }

@@ -13,14 +13,11 @@
   "dependencies": {
     "@upstash/redis": "^1.41.0",
     "bcryptjs": "^2.4.3",
-    "cross-env": "^7.0.3",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.78.0",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
