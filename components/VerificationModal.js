@@ -91,8 +91,8 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-4 py-6 overflow-y-auto">
-      <div className="surface-card rounded-2xl w-full max-w-lg p-6 sm:p-7 border shadow-2xl animate-fadeIn relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
+      <div className="surface-card rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-5 sm:p-7 border shadow-2xl animate-fadeIn relative my-auto">
         {onClose && (
           <button
             type="button"

@@ -92,19 +92,21 @@ export default function GoogleRecaptcha({
   }, [scriptLoaded, siteKey, theme]);
 
   return (
-    <div className={`flex flex-col items-center justify-center my-1 select-none ${className}`}>
-      <div
-        ref={containerRef}
-        className="min-h-[78px] min-w-[304px] flex items-center justify-center rounded-lg overflow-hidden"
-      >
-        {!scriptLoaded && !renderError && (
-          <div
-            className="w-[304px] h-[78px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex items-center justify-center text-xs"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Loading reCAPTCHA...
-          </div>
-        )}
+    <div className={`flex flex-col items-center justify-center my-1 select-none max-w-full overflow-hidden ${className}`}>
+      <div className="w-full flex items-center justify-center overflow-x-auto py-0.5">
+        <div
+          ref={containerRef}
+          className="min-h-[78px] min-w-[304px] flex items-center justify-center rounded-lg origin-center scale-[0.92] sm:scale-100 transition-transform"
+        >
+          {!scriptLoaded && !renderError && (
+            <div
+              className="w-[304px] h-[78px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex items-center justify-center text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Loading reCAPTCHA...
+            </div>
+          )}
+        </div>
       </div>
 
       {renderError && (

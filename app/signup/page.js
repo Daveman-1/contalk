@@ -80,7 +80,7 @@ export default function SignupPage() {
           </Link>
         </div>
 
-        <div className="surface-card rounded-2xl p-8">
+        <div className="surface-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Create Account</h2>
           <p className="text-xs mb-6" style={{ color: 'var(--text-muted)' }}>
             Use your username across Messages, Chat Rooms, Random Chat &amp; Posts
