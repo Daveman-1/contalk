@@ -12,7 +12,7 @@ import { useNotifications } from '@/components/NotificationProvider';
 import { SunIcon, MoonIcon } from '@/components/ThemeIcon';
 import { useTheme } from '@/components/ThemeProvider';
 import { getIdentity } from '@/lib/identity';
-import { Home, Rss, MessageSquare, Hash, Shuffle, Plus } from 'lucide-react';
+import { Home, Rss, MessageSquare, Hash, Shuffle, Plus, ShieldCheck } from 'lucide-react';
 
 export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
@@ -118,6 +118,7 @@ export default function HomePage() {
             { href: '/browse', label: 'Chats', title: 'Direct Messages & People', icon: MessageSquare, active: false },
             { href: '/rooms', label: 'Rooms', title: 'Group Chat Rooms', icon: Hash, active: false },
             { href: '/random', label: 'Random', title: 'Random Male / Female Chat', icon: Shuffle, active: false },
+            { href: '/guidelines', label: 'Rules', title: 'Community Guidelines & Safety', icon: ShieldCheck, active: false },
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -194,6 +195,19 @@ export default function HomePage() {
           </button>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Link
+              href="/guidelines"
+              className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center border"
+              style={{
+                background: 'var(--bg-elevated)',
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--brand-mint)',
+              }}
+              title="Community Guidelines & Safety"
+              aria-label="Community Guidelines"
+            >
+              <ShieldCheck size={16} />
+            </Link>
             <button
               onClick={toggleTheme}
               className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center border"

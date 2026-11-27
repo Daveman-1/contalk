@@ -1,6 +1,7 @@
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { NotificationProvider } from '@/components/NotificationProvider';
+import GlobalSafetyGate from '@/components/GlobalSafetyGate';
 
 export const metadata = {
   title: {
@@ -23,7 +24,10 @@ export default function RootLayout({ children }) {
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
-          <NotificationProvider>{children}</NotificationProvider>
+          <NotificationProvider>
+            {children}
+            <GlobalSafetyGate />
+          </NotificationProvider>
         </ThemeProvider>
       </body>
     </html>
