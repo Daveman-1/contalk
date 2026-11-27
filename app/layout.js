@@ -5,7 +5,7 @@ import GlobalSafetyGate from '@/components/GlobalSafetyGate';
 
 export const metadata = {
   title: {
-    default: 'ConTalk — Real-Time Chat, Rooms & Feed',
+    default: 'ConTalk — Chat Anonymously, Post & Meet Strangers',
     template: '%s | ConTalk',
   },
   description:

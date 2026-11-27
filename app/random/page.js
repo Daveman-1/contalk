@@ -54,7 +54,7 @@ export default function RandomChatPage() {
   const [queueCounts, setQueueCounts] = useState({ male: 0, female: 0 });
   const [reportOpen, setReportOpen] = useState(false);
 
-  const [myGender, setMyGender] = useState('male');
+  const [myGender, setMyGender] = useState('');
   const [lookingFor, setLookingFor] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const [myId, setMyId] = useState('');
@@ -79,6 +79,7 @@ export default function RandomChatPage() {
 
   const updateMyGender = (g) => {
     setMyGender(g);
+    setCategoryError('');
     try {
       localStorage.setItem('ct_gender', g);
     } catch {}
@@ -198,8 +199,8 @@ export default function RandomChatPage() {
   }, []);
 
   const handleStart = async () => {
-    if (!lookingFor) {
-      setCategoryError('Please select who you want to match with (Male or Female).');
+    if (!myGender || !lookingFor) {
+      setCategoryError('Please select both "I am" and "Match me with" to start.');
       return;
     }
     if (!isSafetyVerified()) {
@@ -520,15 +521,21 @@ export default function RandomChatPage() {
                   <div className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-muted)] mb-3">
                     <ShieldCheck size={14} className="text-[#2EE6C5]" />
                     <span>
-                      18+ &amp; Safety Check required ·{' '}
+                      18+ Self-Confirmed · Mutual Consent ·{' '}
                       <Link href="/guidelines" className="underline hover:text-[var(--text-primary)]">
                         Guidelines
                       </Link>
                     </span>
                   </div>
 
-                  <button onClick={handleStart} className="btn-cta w-full py-3.5 text-sm sm:text-base">
-                    {lookingFor ? `Start Chat with ${genderLabel(lookingFor)} →` : 'Start Random Chat →'}
+                  <button
+                    onClick={handleStart}
+                    disabled={!myGender || !lookingFor}
+                    className="btn-cta w-full py-3.5 text-sm sm:text-base"
+                  >
+                    {myGender && lookingFor
+                      ? `Start Chat with ${genderLabel(lookingFor)} →`
+                      : 'Select your options to start'}
                   </button>
                 </>
               )}

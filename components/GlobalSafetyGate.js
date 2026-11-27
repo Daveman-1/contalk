@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import VerificationModal, { isSafetyVerified } from '@/components/VerificationModal';
 
 // Pages that should remain directly readable/usable without the entry gate overlay
-const EXEMPT_PATHS = ['/guidelines', '/privacy', '/login', '/signup'];
+const EXEMPT_PATHS = ['/terms', '/guidelines', '/privacy', '/login', '/signup'];
 
 export default function GlobalSafetyGate() {
   const pathname = usePathname();

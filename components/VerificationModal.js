@@ -180,16 +180,29 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
                 <Link
                   href="/guidelines"
                   target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="underline font-semibold"
                   style={{ color: 'var(--brand-primary)' }}
                 >
-                  Community Guidelines &amp; Terms
+                  Community Guidelines
+                </Link>
+                ,{' '}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Terms
                 </Link>{' '}
                 and{' '}
                 <Link
                   href="/privacy"
                   target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="underline font-semibold"
                   style={{ color: 'var(--brand-primary)' }}

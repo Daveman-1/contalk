@@ -158,16 +158,29 @@ export default function SignupPage() {
                 <Link
                   href="/guidelines"
                   target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="underline font-semibold"
                   style={{ color: 'var(--brand-primary)' }}
                 >
-                  Community Guidelines &amp; Terms
+                  Community Guidelines
+                </Link>
+                ,{' '}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Terms
                 </Link>{' '}
                 and{' '}
                 <Link
                   href="/privacy"
                   target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="underline font-semibold"
                   style={{ color: 'var(--brand-primary)' }}
@@ -203,16 +216,20 @@ export default function SignupPage() {
             </Link>
           </p>
 
-          <div className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
+          <footer className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
             <Link href="/" className="block text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
               ← Continue anonymously on Home
             </Link>
-            <div className="flex items-center justify-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+            <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }} aria-label="Legal and safety links">
+              <Link href="/terms" className="hover:underline">Terms</Link>
               <span>·</span>
-              <Link href="/privacy" className="hover:underline">Privacy</Link>
-            </div>
-          </div>
+              <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+              <span>·</span>
+              <Link href="/guidelines" className="hover:underline">Community Guidelines</Link>
+              <span>·</span>
+              <Link href="/guidelines#safety" className="hover:underline">Report a problem</Link>
+            </nav>
+          </footer>
         </div>
       </div>
     </div>

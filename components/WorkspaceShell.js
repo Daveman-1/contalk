@@ -367,17 +367,21 @@ export default function WorkspaceShell({
         )}
 
         {!collapsed && (
-          <nav
-            className="flex items-center justify-center gap-2.5 pt-1 text-[10px]"
-            style={{ color: 'var(--text-muted)' }}
-            aria-label="Legal and safety"
-          >
-            <Link href="/guidelines" className="hover:underline">Terms</Link>
-            <span>·</span>
-            <Link href="/privacy" className="hover:underline">Privacy</Link>
-            <span>·</span>
-            <Link href="/guidelines#safety" className="hover:underline">Safety</Link>
-          </nav>
+          <footer className="pt-1">
+            <nav
+              className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px]"
+              style={{ color: 'var(--text-muted)' }}
+              aria-label="Legal and safety links"
+            >
+              <Link href="/terms" className="hover:underline">Terms</Link>
+              <span>·</span>
+              <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+              <span>·</span>
+              <Link href="/guidelines" className="hover:underline">Community Guidelines</Link>
+              <span>·</span>
+              <Link href="/guidelines#safety" className="hover:underline">Report a problem</Link>
+            </nav>
+          </footer>
         )}
       </div>
     </div>

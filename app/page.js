@@ -477,9 +477,10 @@ export default function HomePage() {
           <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <span>ConTalk · Say it. Stay anonymous.</span>
             <nav className="flex flex-wrap items-center gap-4" aria-label="Legal and safety links">
-              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+              <Link href="/terms" className="hover:underline">Terms</Link>
               <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-              <Link href="/guidelines#safety" className="hover:underline">Safety &amp; Report</Link>
+              <Link href="/guidelines" className="hover:underline">Community Guidelines</Link>
+              <Link href="/guidelines#safety" className="hover:underline">Report a problem</Link>
             </nav>
           </div>
         </footer>

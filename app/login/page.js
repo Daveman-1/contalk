@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('ct_token')) {
@@ -71,7 +72,17 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotHelp((v) => !v)}
+                  className="text-xs font-medium hover:underline"
+                  style={{ color: 'var(--accent-purple)' }}
+                >
+                  Forgot password?
+                </button>
+              </div>
               <input
                 type="password"
                 className="themed-input py-3 px-4 text-sm"
@@ -81,6 +92,25 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
               />
+              {showForgotHelp && (
+                <div
+                  className="mt-2 rounded-xl px-3.5 py-2.5 text-xs leading-relaxed border"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Password reset isn&apos;t available yet because ConTalk accounts don&apos;t store an email address. You can continue anonymously on{' '}
+                  <Link href="/" className="underline font-medium" style={{ color: 'var(--brand-primary)' }}>
+                    Home
+                  </Link>{' '}
+                  or{' '}
+                  <Link href="/signup" className="underline font-medium" style={{ color: 'var(--brand-primary)' }}>
+                    create a new account
+                  </Link>.
+                </div>
+              )}
             </div>
 
             {error && (
@@ -101,16 +131,20 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
+          <footer className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
             <Link href="/" className="block text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
               ← Continue anonymously on Home
             </Link>
-            <div className="flex items-center justify-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+            <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }} aria-label="Legal and safety links">
+              <Link href="/terms" className="hover:underline">Terms</Link>
               <span>·</span>
-              <Link href="/privacy" className="hover:underline">Privacy</Link>
-            </div>
-          </div>
+              <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+              <span>·</span>
+              <Link href="/guidelines" className="hover:underline">Community Guidelines</Link>
+              <span>·</span>
+              <Link href="/guidelines#safety" className="hover:underline">Report a problem</Link>
+            </nav>
+          </footer>
         </div>
       </div>
     </div>

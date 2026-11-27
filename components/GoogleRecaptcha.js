@@ -16,6 +16,7 @@ export default function GoogleRecaptcha({
   const widgetIdRef = useRef(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [renderError, setRenderError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [isLocalhost, setIsLocalhost] = useState(false);
 
   useEffect(() => {
@@ -33,12 +34,23 @@ export default function GoogleRecaptcha({
     ? (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY_DEV || GOOGLE_TEST_SITE_KEY)
     : (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || GOOGLE_TEST_SITE_KEY);
 
+  const handleRetry = () => {
+    if (typeof document !== 'undefined') {
+      const existing = document.getElementById('google-recaptcha-script');
+      if (existing) existing.remove();
+    }
+    setRenderError(false);
+    setScriptLoaded(false);
+    setRetryCount((c) => c + 1);
+  };
+
   // 1. Load the Google reCAPTCHA explicit script once
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     if (window.grecaptcha && window.grecaptcha.render) {
       setScriptLoaded(true);
+      setRenderError(false);
       return;
     }
 
@@ -76,7 +88,7 @@ export default function GoogleRecaptcha({
       }
     }, 7000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [retryCount]);
 
   // 2. Render the reCAPTCHA widget into containerRef
   useEffect(() => {
@@ -130,9 +142,18 @@ export default function GoogleRecaptcha({
       </div>
 
       {renderError && (
-        <p className="text-xs text-rose-400 mt-1 text-center">
-          Could not load reCAPTCHA. Check your connection or disable content blockers and reload.
-        </p>
+        <div className="mt-1.5 flex flex-col items-center gap-2 text-center">
+          <p className="text-xs text-rose-400">
+            Could not load reCAPTCHA. Check your connection or disable content blockers and try again.
+          </p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="btn-soft px-3 py-1 text-xs"
+          >
+            Retry reCAPTCHA
+          </button>
+        </div>
       )}
     </div>
   );

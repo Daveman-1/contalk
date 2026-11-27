@@ -20,11 +20,17 @@ export default function GuidelinesPage() {
 
         <article className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
           <header className="border-b pb-5" style={{ borderColor: 'var(--border-subtle)' }}>
+            <span
+              className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3"
+              style={{ background: 'rgba(245, 158, 11, 0.16)', color: '#F59E0B' }}
+            >
+              Draft Placeholder — Pending Legal Review
+            </span>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Community Guidelines &amp; Terms of Use
+              Community Guidelines
             </h1>
             <p className="text-xs sm:text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-              Last updated: November 2026 · Applies to all anonymous visitors and registered accounts on ConTalk.
+              Last updated: November 2026 · Placeholder guidelines for review before general public launch.
             </p>
           </header>
 
@@ -78,11 +84,12 @@ export default function GuidelinesPage() {
 
           <footer className="pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
             <span>ConTalk — Say it. Stay anonymous.</span>
-            <div className="flex items-center gap-4">
+            <nav className="flex flex-wrap items-center gap-4" aria-label="Legal and safety links">
+              <Link href="/terms" className="hover:underline">Terms</Link>
               <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-              <Link href="/signup" className="hover:underline">Create Account</Link>
-              <Link href="/" className="hover:underline">Home</Link>
-            </div>
+              <Link href="/guidelines" className="hover:underline">Community Guidelines</Link>
+              <Link href="/guidelines#safety" className="hover:underline">Report a problem</Link>
+            </nav>
           </footer>
         </article>
       </div>

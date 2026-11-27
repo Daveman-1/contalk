@@ -116,8 +116,22 @@ export default function UserList({
       {/* Scrollable Avatar User List */}
       <div className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
         {visibleUsers.length === 0 ? (
-          <div className="py-10 text-center text-xs px-3" style={{ color: 'var(--text-muted)' }}>
-            {search ? 'No matching online users' : 'No one else is online right now. Share your link or open a second tab!'}
+          <div className="py-8 text-center text-xs px-3 space-y-3" style={{ color: 'var(--text-muted)' }}>
+            <p className="leading-relaxed">
+              {search
+                ? 'No matching online users.'
+                : 'Be the first to start a conversation — no one else is online in Direct Messages yet.'}
+            </p>
+            {!search && (
+              <div className="flex flex-col gap-2">
+                <Link href="/rooms" className="btn-soft py-2 px-3 text-xs block">
+                  Join a Chat Room →
+                </Link>
+                <Link href="/feed" className="btn-soft py-2 px-3 text-xs block">
+                  Publish on Live Feed →
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
           visibleUsers.map((user) => {
