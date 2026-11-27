@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { findUserByUsername, createUser } from '@/lib/db';
 import { signToken, attachAuthCookie } from '@/lib/auth';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,10 +9,18 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
-    const { username, password } = await request.json();
+    const { username, password, captchaToken } = await request.json();
 
     if (!username || !password) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
+    }
+
+    const captchaResult = await verifyRecaptchaToken(captchaToken);
+    if (!captchaResult.success) {
+      return NextResponse.json(
+        { error: captchaResult.error || 'Please complete the reCAPTCHA check.' },
+        { status: 400 }
+      );
     }
 
     const trimmed = username.trim();

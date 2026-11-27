@@ -13,7 +13,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [consentConfirmed, setConsentConfirmed] = useState(false);
-  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaVerified = Boolean(captchaToken);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('ct_token')) {
@@ -51,7 +52,11 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: form.username, password: form.password }),
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+          captchaToken,
+        }),
       });
       const data = await res.json();
 
@@ -149,14 +154,34 @@ export default function SignupPage() {
                 className="mt-0.5 w-4 h-4 rounded accent-indigo-500 cursor-pointer"
               />
               <span style={{ color: 'var(--text-secondary)' }}>
-                I consent to the <strong style={{ color: 'var(--text-primary)' }}>Community Guidelines &amp; Terms</strong> (no harassment, hate speech, or recording).
+                I agree to the{' '}
+                <Link
+                  href="/guidelines"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Community Guidelines &amp; Terms
+                </Link>{' '}
+                and{' '}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Privacy Policy
+                </Link>{' '}
+                (no harassment, hate speech, or recording).
               </span>
             </label>
 
             {/* 3. Captcha — Are you human? */}
             <CaptchaWidget
               verified={captchaVerified}
-              onVerified={(v) => setCaptchaVerified(v)}
+              onVerified={(tok) => setCaptchaToken(typeof tok === 'string' ? tok : '')}
               compact={true}
             />
 
@@ -178,10 +203,15 @@ export default function SignupPage() {
             </Link>
           </p>
 
-          <div className="mt-4 pt-4 border-t text-center" style={{ borderColor: 'var(--border-subtle)' }}>
-            <Link href="/" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+          <div className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
+            <Link href="/" className="block text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
               ← Continue anonymously on Home
             </Link>
+            <div className="flex items-center justify-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+              <span>·</span>
+              <Link href="/privacy" className="hover:underline">Privacy</Link>
+            </div>
           </div>
         </div>
       </div>

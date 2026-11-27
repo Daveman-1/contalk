@@ -15,6 +15,7 @@ const ROOM_ICONS = ROOM_ICON_KEYS;
 export default function RoomsPage() {
   const { roomPresence, setActiveRoomId: reportActiveRoom, blockedUserIds, blockUser } = useNotifications();
   const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [sendError, setSendError] = useState('');
@@ -38,6 +39,8 @@ export default function RoomsPage() {
       if (Array.isArray(data.rooms)) setRooms(data.rooms);
     } catch (err) {
       console.error('Failed to fetch rooms:', err);
+    } finally {
+      setLoadingRooms(false);
     }
   }, []);
 
@@ -274,13 +277,33 @@ export default function RoomsPage() {
             <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
               Channels
             </span>
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{filteredRooms.length}</span>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {loadingRooms ? '...' : filteredRooms.length}
+            </span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-1 pr-0.5">
-            {filteredRooms.length === 0 ? (
-              <div className="py-10 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                No rooms match &ldquo;{search}&rdquo;
+            {loadingRooms ? (
+              <div className="space-y-2 py-2" aria-busy="true" aria-label="Loading chat rooms">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl animate-pulse"
+                    style={{ background: 'var(--bg-elevated)' }}
+                  >
+                    <div className="w-8 h-8 rounded-lg" style={{ background: 'var(--bg-hover)' }} />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-24 rounded" style={{ background: 'var(--bg-hover)' }} />
+                      <div className="h-2.5 w-32 rounded" style={{ background: 'var(--bg-hover)' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="py-10 text-center text-xs px-3" style={{ color: 'var(--text-muted)' }}>
+                {search.trim()
+                  ? `No rooms match "${search.trim()}"`
+                  : 'No rooms available yet. Create the first channel above!'}
               </div>
             ) : (
               filteredRooms.map((room) => {

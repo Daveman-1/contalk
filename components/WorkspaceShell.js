@@ -357,6 +357,20 @@ export default function WorkspaceShell({
             <UserAvatar avatar={identity.avatar} seed={identity.id} name={identity.name} size={36} />
           </button>
         )}
+
+        {!collapsed && (
+          <nav
+            className="flex items-center justify-center gap-2.5 pt-1 text-[10px]"
+            style={{ color: 'var(--text-muted)' }}
+            aria-label="Legal and safety"
+          >
+            <Link href="/guidelines" className="hover:underline">Terms</Link>
+            <span>·</span>
+            <Link href="/privacy" className="hover:underline">Privacy</Link>
+            <span>·</span>
+            <Link href="/guidelines#safety" className="hover:underline">Safety</Link>
+          </nav>
+        )}
       </div>
     </div>
   );

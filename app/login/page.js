@@ -101,10 +101,15 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-4 pt-4 border-t text-center" style={{ borderColor: 'var(--border-subtle)' }}>
-            <Link href="/" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+          <div className="mt-4 pt-4 border-t text-center space-y-2" style={{ borderColor: 'var(--border-subtle)' }}>
+            <Link href="/" className="block text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
               ← Continue anonymously on Home
             </Link>
+            <div className="flex items-center justify-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+              <span>·</span>
+              <Link href="/privacy" className="hover:underline">Privacy</Link>
+            </div>
           </div>
         </div>
       </div>

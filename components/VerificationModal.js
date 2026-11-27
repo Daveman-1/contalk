@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   ShieldCheck,
   AlertCircle,
@@ -51,10 +52,10 @@ export function CaptchaWidget({ onVerified, verified, compact = false }) {
     >
       <GoogleRecaptcha
         onVerify={(token) => {
-          if (onVerified) onVerified(Boolean(token));
+          if (onVerified) onVerified(token || '');
         }}
         onExpire={() => {
-          if (onVerified) onVerified(false);
+          if (onVerified) onVerified('');
         }}
       />
     </div>
@@ -175,7 +176,27 @@ export default function VerificationModal({ isOpen, onClose, onComplete }) {
                 </span>
               </div>
               <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                I agree to the Community Guidelines: no unlawful content, hate speech, harassment, non-consensual sharing, recording, or spamming.
+                I agree to the{' '}
+                <Link
+                  href="/guidelines"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Community Guidelines &amp; Terms
+                </Link>{' '}
+                and{' '}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="underline font-semibold"
+                  style={{ color: 'var(--brand-primary)' }}
+                >
+                  Privacy Policy
+                </Link>{' '}
+                (no unlawful content, hate speech, harassment, recording, or spamming).
               </p>
             </div>
           </label>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import WorkspaceShell from '@/components/WorkspaceShell';
 import ChatBox from '@/components/ChatBox';
 import UserAvatar from '@/components/UserAvatar';
@@ -54,9 +55,10 @@ export default function RandomChatPage() {
   const [reportOpen, setReportOpen] = useState(false);
 
   const [myGender, setMyGender] = useState('male');
-  const [lookingFor, setLookingFor] = useState('female');
+  const [lookingFor, setLookingFor] = useState('');
+  const [categoryError, setCategoryError] = useState('');
   const [myId, setMyId] = useState('');
-  const [myName, setMyName] = useState('');
+  const [myName, setMyName] = useState('Anonymous');
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const roomIdRef = useRef(null);
@@ -84,6 +86,7 @@ export default function RandomChatPage() {
 
   const updateLookingFor = (g) => {
     setLookingFor(g);
+    setCategoryError('');
     try {
       localStorage.setItem('ct_looking_for', g);
     } catch {}
@@ -195,6 +198,10 @@ export default function RandomChatPage() {
   }, []);
 
   const handleStart = async () => {
+    if (!lookingFor) {
+      setCategoryError('Please select who you want to match with (Male or Female).');
+      return;
+    }
     if (!isSafetyVerified()) {
       setShowVerificationModal(true);
       return;
@@ -425,7 +432,9 @@ export default function RandomChatPage() {
               >
                 <span className="online-dot"></span>
                 <span>
-                  {onlineUsers.length} online · {queueCounts.male} Male / {queueCounts.female} Female waiting
+                  {onlineUsers.length > 0 || queueCounts.male > 0 || queueCounts.female > 0
+                    ? `${Math.max(onlineUsers.length, 1)} online · ${queueCounts.male} Male / ${queueCounts.female} Female waiting`
+                    : 'Live matchmaking ready · Be the first in queue'}
                 </span>
               </div>
 
@@ -439,7 +448,7 @@ export default function RandomChatPage() {
                   </h1>
                   <p className="text-xs sm:text-sm mb-7" style={{ color: 'var(--text-muted)' }}>
                     Choose your category and who you want to match with as{' '}
-                    <strong style={{ color: 'var(--text-primary)' }}>{myName}</strong>.
+                    <strong style={{ color: 'var(--text-primary)' }}>{myName || 'Anonymous'}</strong>.
                   </p>
 
                   <div className="space-y-5 text-left mb-8">
@@ -495,7 +504,7 @@ export default function RandomChatPage() {
                                 <span>{cat.label}</span>
                               </span>
                               <span className="text-[11px] opacity-80 font-normal">
-                                {waitingInCat} waiting
+                                {waitingInCat > 0 ? `${waitingInCat} waiting` : 'Be the first'}
                               </span>
                             </button>
                           );
@@ -504,13 +513,22 @@ export default function RandomChatPage() {
                     </div>
                   </div>
 
+                  {categoryError && (
+                    <p className="text-xs text-rose-400 mb-3">{categoryError}</p>
+                  )}
+
                   <div className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-muted)] mb-3">
                     <ShieldCheck size={14} className="text-[#2EE6C5]" />
-                    <span>18+ Confirmed · Mutual Consent · Human Verified</span>
+                    <span>
+                      18+ &amp; Safety Check required ·{' '}
+                      <Link href="/guidelines" className="underline hover:text-[var(--text-primary)]">
+                        Guidelines
+                      </Link>
+                    </span>
                   </div>
 
                   <button onClick={handleStart} className="btn-cta w-full py-3.5 text-sm sm:text-base">
-                    Start Chat with {genderLabel(lookingFor)} →
+                    {lookingFor ? `Start Chat with ${genderLabel(lookingFor)} →` : 'Start Random Chat →'}
                   </button>
                 </>
               )}

@@ -69,6 +69,13 @@ export default function GoogleRecaptcha({
       }, 100);
       return () => clearInterval(checkInterval);
     }
+
+    const timeout = setTimeout(() => {
+      if (!window.grecaptcha || !window.grecaptcha.render) {
+        setRenderError(true);
+      }
+    }, 7000);
+    return () => clearTimeout(timeout);
   }, []);
 
   // 2. Render the reCAPTCHA widget into containerRef
@@ -123,8 +130,8 @@ export default function GoogleRecaptcha({
       </div>
 
       {renderError && (
-        <p className="text-xs text-rose-400 mt-1">
-          Could not load reCAPTCHA. Check your network or site key.
+        <p className="text-xs text-rose-400 mt-1 text-center">
+          Could not load reCAPTCHA. Check your connection or disable content blockers and reload.
         </p>
       )}
     </div>

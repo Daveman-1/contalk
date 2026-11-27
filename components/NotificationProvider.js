@@ -119,8 +119,9 @@ export function NotificationProvider({ children }) {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.title = unreadCount > 0 ? `(${unreadCount}) ConTalk` : 'ConTalk — Real-Time Chat, Rooms & Feed';
-  }, [unreadCount]);
+    const cleanTitle = document.title.replace(/^\(\d+\)\s+/, '');
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${cleanTitle}` : cleanTitle;
+  }, [unreadCount, pathname]);
 
   const pushNotification = useCallback(
     (item) => {

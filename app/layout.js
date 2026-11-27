@@ -3,15 +3,17 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { NotificationProvider } from '@/components/NotificationProvider';
 
 export const metadata = {
-  title: 'ConTalk — Real-Time Chat, Rooms & Feed',
-  description: 'Chat anonymously or with an account. Random Male/Female matches, topic chat rooms, DMs, and a live social feed.',
+  title: {
+    default: 'ConTalk — Real-Time Chat, Rooms & Feed',
+    template: '%s | ConTalk',
+  },
+  description:
+    'Chat anonymously or with an account. Random Male/Female matches, topic chat rooms, DMs, and a live social feed.',
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
 };

@@ -190,7 +190,7 @@ export default function HomePage() {
           >
             <UserAvatar avatar={identity.avatar} seed={identity.id} name={identity.name} size={24} />
             <span className="online-dot"></span>
-            <span>{onlineCount} online · {identity.name}</span>
+            <span>{onlineCount > 0 ? `${onlineCount} online` : 'Live now'} · {identity.name}</span>
           </button>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -454,6 +454,21 @@ export default function HomePage() {
 
           <FeedTimeline hideComposer={true} showInlineSearch={true} />
         </section>
+
+        {/* Compact Legal & Safety Footer */}
+        <footer
+          className="px-4 sm:px-8 py-5 pb-24 sm:pb-8 border-t text-xs"
+          style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}
+        >
+          <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <span>ConTalk · Say it. Stay anonymous.</span>
+            <nav className="flex flex-wrap items-center gap-4" aria-label="Legal and safety links">
+              <Link href="/guidelines" className="hover:underline">Guidelines &amp; Terms</Link>
+              <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+              <Link href="/guidelines#safety" className="hover:underline">Safety &amp; Report</Link>
+            </nav>
+          </div>
+        </footer>
       </div>
 
       {/* Fixed Mobile Bottom Navigation Bar */}
